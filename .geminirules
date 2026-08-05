@@ -1,0 +1,31 @@
+# Strict Project Rule File for AI Assistant (sales-website-admin)
+
+CRITICAL INSTRUCTION: You MUST strictly limit all code suggestions, implementations, and refactoring to the following exact stack:
+
+- Frontend Framework: Next.js 13+ / 14+ (React App Router)
+- Styling & UI Kit: Tailwind CSS + Shadcn UI
+- Iconography: Lucide React
+- Animation & Motion: Framer Motion
+- State Management: Zustand (`store/useAdminAuthStore.ts`, `store/useUIStore.ts`)
+- Data Fetching: TanStack Query (React Query v5)
+- Form Management: React Hook Form + Zod
+- Data Tables: @tanstack/react-table + Shadcn Table
+- Backend Connection: REST API (`/api/v1/admin/*`) with `X-Admin-API-Key` & Bearer JWT Token
+
+Do NOT introduce or suggest alternative frameworks (like Vue, Angular, Bootstrap, MUI, Ant Design, Redux, Context API for core state) unless explicitly asked by the user.
+
+## Master Coding Directives for AI:
+1. **Architecture & File Location**:
+   - Next.js App Router in `app/(dashboard)/` and `app/(auth)/`
+   - Reusable UI primitives in `components/ui/`
+   - Common Layout components in `components/common/`
+   - Business Admin features in `components/features/`
+   - State stores in `store/`
+   - API hooks in `lib/hooks/`
+   - Types in `types/`
+
+2. **TypeScript & Security**:
+   - 100% strict TypeScript. NO `any`.
+   - Server Components (RSC) by default. Use `'use client'` where interactive.
+   - Inject `X-Admin-API-Key` and `Authorization: Bearer` headers for all admin requests.
+   - Do NOT store plain-text decrypted customer data in localStorage.
