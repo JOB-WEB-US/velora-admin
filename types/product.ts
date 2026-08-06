@@ -20,6 +20,21 @@ export interface ProductVariant {
   originalPrice?: number;
   imageUrl?: string;
   stock: number;
+  isActive?: boolean;
+  type?: { id: string; name: string; isActive?: boolean };
+  colorRel?: { id: string; name: string; hexCode?: string; isActive?: boolean };
+  sizeRel?: { id: string; name: string; isActive?: boolean };
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  userId?: string;
+  userName: string;
+  userAvatar?: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
 }
 
 export interface Product {
@@ -39,8 +54,21 @@ export interface Product {
   categoryId?: string | null;
   category?: Category | null;
   variants?: ProductVariant[];
+  reviews?: Review[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface DraftVariant {
+  sku: string;
+  productType: string;
+  size: string;
+  color: string;
+  price: number;
+  originalPrice?: number;
+  imageUrl?: string;
+  stock: number;
+  isActive?: boolean;
 }
 
 export interface CreateProductInput {
@@ -55,6 +83,7 @@ export interface CreateProductInput {
   isFeatured?: boolean;
   isActive?: boolean;
   categoryId?: string | null;
+  variants?: DraftVariant[];
 }
 
 export interface CreateVariantInput {
@@ -67,4 +96,5 @@ export interface CreateVariantInput {
   originalPrice?: number;
   imageUrl?: string;
   stock: number;
+  isActive?: boolean;
 }

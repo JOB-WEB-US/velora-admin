@@ -9,6 +9,7 @@ interface AdminAuthStore {
   isAuthenticated: boolean;
   isHydrated: boolean;
   setAuth: (user: AdminUser, token: string, apiKey?: string) => void;
+  setApiKey: (key: string) => void;
   logout: () => void;
   setHydrated: (state: boolean) => void;
 }
@@ -29,6 +30,8 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
           apiKey: apiKey || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "velora_admin_secret_api_key_2026",
           isAuthenticated: true,
         }),
+
+      setApiKey: (key: string) => set({ apiKey: key }),
 
       logout: () => {
         if (typeof window !== "undefined") {

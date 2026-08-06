@@ -138,7 +138,20 @@ export default function ProductsListPage() {
               ) : filteredProducts.length > 0 ? (
                 filteredProducts.map((product) => {
                   const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) || 0;
-                  const isActive = product.isActive !== false && product.category?.isHidden !== true && Boolean(product.categoryId);
+                  const activeVariantsCount = product.variants?.filter((v: any) => {
+                    const isVariantActive = v.isActive !== false;
+                    const isTypeActive = !v.type || v.type.isActive !== false;
+                    const isColorActive = !v.colorRel || v.colorRel.isActive !== false;
+                    const isSizeActive = !v.sizeRel || v.sizeRel.isActive !== false;
+                    return isVariantActive && isTypeActive && isColorActive && isSizeActive;
+                  }).length || 0;
+
+                  const isActive = Boolean(
+                    product.isActive !== false &&
+                    product.category?.isHidden !== true &&
+                    Boolean(product.categoryId) &&
+                    activeVariantsCount > 0
+                  );
 
                   return (
                     <tr key={product.id} className={`hover:bg-slate-50 transition group ${!isActive ? "bg-amber-50/30" : ""}`}>
@@ -226,11 +239,20 @@ export default function ProductsListPage() {
 
                       {/* Rating */}
                       <td className="p-4">
-                        <div className="flex items-center gap-1.5 text-amber-500 font-bold">
-                          <Star className="w-4 h-4 fill-amber-400" />
-                          <span>{product.rating}</span>
-                          <span className="text-slate-400 text-xs">({product.reviewCount})</span>
-                        </div>
+                        {product.reviews && product.reviews.length > 0 ? (
+                          <div className="flex items-center gap-1.5 text-amber-500 font-bold">
+                            <Star className="w-4 h-4 fill-amber-400" />
+                            <span>
+                              {(
+                                product.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+                                product.reviews.length
+                              ).toFixed(1)}
+                            </span>
+                            <span className="text-slate-400 text-xs">({product.reviews.length})</span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 font-medium">Chưa có đánh giá</span>
+                        )}
                       </td>
 
                       {/* Actions */}

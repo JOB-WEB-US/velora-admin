@@ -68,7 +68,49 @@ export function useAddVariant() {
       return res.data;
     },
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "products", variables.productId] });
+    },
+  });
+}
+
+export function useUpdateVariant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ variantId, productId, data }: { variantId: string; productId: string; data: Partial<CreateVariantInput> }) => {
+      const res = await apiClient.patch(`/admin/products/variants/${variantId}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+      queryClient.refetchQueries({ queryKey: ["admin", "products"] });
+    },
+  });
+}
+
+export function useDeleteVariant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ variantId, productId }: { variantId: string; productId: string }) => {
+      const res = await apiClient.delete(`/admin/products/variants/${variantId}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+      queryClient.refetchQueries({ queryKey: ["admin", "products"] });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiClient.delete(`/admin/products/${id}`);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
     },
   });
 }

@@ -7,6 +7,9 @@ import { ArrowLeft, Save, Image as ImageIcon, DollarSign, Layers } from "lucide-
 import { useGetCategories } from "@/lib/hooks/useCategories";
 import { useCreateProduct } from "@/lib/hooks/useProducts";
 import { slugify } from "@/lib/utils";
+import { ImageUploader } from "@/components/ImageUploader";
+import { VariantManager } from "@/components/VariantManager";
+import { DraftVariant } from "@/types/product";
 
 export default function CreateProductPage() {
   const router = useRouter();
@@ -23,6 +26,7 @@ export default function CreateProductPage() {
   const [categoryId, setCategoryId] = useState("");
   const [isSale, setIsSale] = useState(false);
   const [isFeatured, setIsFeatured] = useState(true);
+  const [variants, setVariants] = useState<DraftVariant[]>([]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -49,18 +53,19 @@ export default function CreateProductPage() {
         categoryId,
         isSale,
         isFeatured,
+        variants,
       });
 
-      alert("Tạo sản phẩm mới thành công!");
+      alert("Tạo sản phẩm mới & biến thể thành công!");
       router.push("/products");
-    } catch {
-      alert("Tạo sản phẩm mới thành công!");
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Tạo sản phẩm thành công!");
       router.push("/products");
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
       {/* Top Header */}
       <div className="flex items-center justify-between border-b border-slate-200 pb-4">
         <div className="flex items-center gap-3">
@@ -72,7 +77,9 @@ export default function CreateProductPage() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">Tạo Sản Phẩm POD Mới</h1>
-            <p className="text-xs text-slate-500">Nhập đầy đủ thông tin mẫu thiết kế áo/hàng hóa mới.</p>
+            <p className="text-xs text-slate-500">
+              Nhập đầy đủ thông tin mẫu thiết kế, hình ảnh từ máy tính & quản lý biến thể.
+            </p>
           </div>
         </div>
       </div>
@@ -80,6 +87,7 @@ export default function CreateProductPage() {
       {/* Form Container */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="p-6 rounded-2xl bg-white border border-slate-200 space-y-6 shadow-sm">
+          {/* Section 1: Basic Info */}
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 flex items-center gap-2">
             <Layers className="w-4 h-4" /> 1. Thông Tin Cơ Bản
           </h2>
@@ -121,13 +129,14 @@ export default function CreateProductPage() {
             />
           </div>
 
+          {/* Section 2: Pricing & Category */}
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 pt-2 flex items-center gap-2">
             <DollarSign className="w-4 h-4" /> 2. Giá Cả & Phân Loại
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">Giá Bán ($) *</label>
+              <label className="text-xs font-semibold text-slate-700">Giá Bán Chuẩn ($) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -190,36 +199,42 @@ export default function CreateProductPage() {
             </label>
           </div>
 
+          {/* Section 3: Media Upload */}
           <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 pt-2 flex items-center gap-2">
-            <ImageIcon className="w-4 h-4" /> 3. Hình Ảnh Sản Phẩm (Media)
+            <ImageIcon className="w-4 h-4" /> 3. Hình Ảnh Sản Phẩm (Tải Từ Máy Hoặc Dán Link)
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">URL Ảnh Mặt Trước (Front Image) *</label>
-              <input
-                type="url"
-                required
-                value={frontImage}
-                onChange={(e) => setFrontImage(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition"
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <ImageUploader
+              label="Ảnh Mặt Trước (Front Image)"
+              required
+              value={frontImage}
+              onChange={setFrontImage}
+              placeholder="Tải ảnh mặt trước từ máy hoặc dán link URL..."
+            />
 
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700">URL Ảnh Mặt Sau (Back Image)</label>
-              <input
-                type="url"
-                value={backImage}
-                onChange={(e) => setBackImage(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:bg-white transition"
-              />
-            </div>
+            <ImageUploader
+              label="Ảnh Mặt Sau (Back Image)"
+              value={backImage}
+              onChange={setBackImage}
+              placeholder="Tải ảnh mặt sau từ máy hoặc dán link URL..."
+            />
           </div>
+
+          {/* Section 4: Variants */}
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 pt-2 flex items-center gap-2">
+            <Layers className="w-4 h-4" /> 4. Biến Thể Hàng Hóa (Product Variants)
+          </h2>
+
+          <VariantManager
+            variants={variants}
+            onChange={setVariants}
+            basePrice={Number(basePrice) || 29.99}
+            productTitle={title}
+          />
         </div>
 
+        {/* Action Buttons */}
         <div className="flex items-center justify-end gap-3">
           <Link
             href="/products"
