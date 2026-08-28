@@ -18,6 +18,7 @@ import {
   ShieldAlert,
   Truck,
   Ticket,
+  Layers,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { name: "Danh mục & Menu Trend", href: "/categories", icon: FolderTree, adminOnly: true },
   { name: "Thuộc tính & Biến thể", href: "/attributes", icon: SlidersHorizontal, adminOnly: true },
   { name: "Mã Giảm Giá (Coupons)", href: "/coupons", icon: Ticket, adminOnly: true },
+  { name: "Ưu Đãi Bundle & Save", href: "/bundles", icon: Layers, adminOnly: true },
   { name: "Quản lý Đơn hàng", href: "/orders", icon: ShoppingBag, shipperAllowed: true },
   { name: "Khách hàng", href: "/customers", icon: Users, adminOnly: true },
   { name: "Admin API Keys", href: "/api-keys", icon: Key, superAdminOnly: true },
