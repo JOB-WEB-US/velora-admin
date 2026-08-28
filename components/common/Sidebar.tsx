@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { name: "Tổng quan Dashboard", href: "/", icon: LayoutDashboard, adminOnly: true },
   { name: "Quản lý Hàng hóa", href: "/products", icon: Package, adminOnly: true },
-  { name: "Danh mục Sản phẩm", href: "/categories", icon: FolderTree, adminOnly: true },
+  { name: "Danh mục & Menu Trend", href: "/categories", icon: FolderTree, adminOnly: true },
   { name: "Thuộc tính & Biến thể", href: "/attributes", icon: SlidersHorizontal, adminOnly: true },
   { name: "Quản lý Đơn hàng", href: "/orders", icon: ShoppingBag, shipperAllowed: true },
   { name: "Khách hàng", href: "/customers", icon: Users, adminOnly: true },

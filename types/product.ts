@@ -3,6 +3,10 @@ export interface Category {
   name: string;
   slug: string;
   isHidden?: boolean;
+  isTrendingMenu?: boolean;
+  menuOrder?: number;
+  badgeText?: string | null;
+  icon?: string | null;
   _count?: {
     products: number;
   };

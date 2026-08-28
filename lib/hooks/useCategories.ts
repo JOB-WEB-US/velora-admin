@@ -16,7 +16,7 @@ export function useGetCategories() {
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (newCategory: { name: string; slug: string; isHidden?: boolean }) => {
+    mutationFn: async (newCategory: Partial<Category>) => {
       const { data } = await apiClient.post("/categories", newCategory);
       return data;
     },
