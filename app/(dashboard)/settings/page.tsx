@@ -14,7 +14,10 @@ import {
   Check, 
   Sparkles, 
   Flame, 
-  CheckCircle2 
+  CheckCircle2,
+  Truck,
+  TrendingUp,
+  Zap
 } from "lucide-react";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { apiClient } from "@/lib/api/client";
@@ -50,6 +53,15 @@ export default function SettingsPage() {
   const [savingParticles, setSavingParticles] = useState(false);
   const [particleSavedSuccess, setParticleSavedSuccess] = useState(false);
 
+  // Shipping & Free Shipping Threshold State
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(75);
+  const [standardShippingRate, setStandardShippingRate] = useState(4.99);
+  const [expressShippingRate, setExpressShippingRate] = useState(9.99);
+  const [shippingBarEnabled, setShippingBarEnabled] = useState(true);
+  const [shippingBannerText, setShippingBannerText] = useState("Free Express US Shipping on orders over $75!");
+  const [savingShipping, setSavingShipping] = useState(false);
+  const [shippingSavedSuccess, setShippingSavedSuccess] = useState(false);
+
   useEffect(() => {
     // Fetch current particle settings from Backend
     apiClient
@@ -68,7 +80,48 @@ export default function SettingsPage() {
       .catch((err) => {
         console.warn("Could not load particle settings:", err);
       });
+
+    // Fetch current shipping settings from Backend
+    apiClient
+      .get("/settings/shipping")
+      .then((res) => {
+        if (res.data?.data) {
+          const { freeShippingThreshold: fst, standardShippingRate: ssr, expressShippingRate: esr, enabled, bannerText } = res.data.data;
+          if (fst !== undefined) setFreeShippingThreshold(fst);
+          if (ssr !== undefined) setStandardShippingRate(ssr);
+          if (esr !== undefined) setExpressShippingRate(esr);
+          if (enabled !== undefined) setShippingBarEnabled(enabled);
+          if (bannerText !== undefined) setShippingBannerText(bannerText);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not load shipping settings:", err);
+      });
   }, []);
+
+  const handleSaveShippingSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingShipping(true);
+    setShippingSavedSuccess(false);
+
+    try {
+      await apiClient.post("/settings/shipping", {
+        freeShippingThreshold: Number(freeShippingThreshold),
+        standardShippingRate: Number(standardShippingRate),
+        expressShippingRate: Number(expressShippingRate),
+        enabled: shippingBarEnabled,
+        bannerText: shippingBannerText,
+      });
+
+      setShippingSavedSuccess(true);
+      setTimeout(() => setShippingSavedSuccess(false), 3500);
+      alert("✅ Đã lưu cấu hình Ngưỡng Miễn Phí Vận Chuyển & Phí Ship thành công!");
+    } catch (err: any) {
+      alert(err.message || "Lỗi lưu cấu hình vận chuyển!");
+    } finally {
+      setSavingShipping(false);
+    }
+  };
 
   const handleSaveBackend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -263,7 +316,144 @@ export default function SettingsPage() {
       </form>
 
       {/* =========================================================================
-          SECTION 2: BACKEND CONNECTION & API KEY
+          SECTION 2: SHIPPING RATES & FREE SHIPPING THRESHOLD MANAGER
+          ========================================================================= */}
+      <form onSubmit={handleSaveShippingSettings} className="p-6 rounded-2xl bg-white border border-slate-200 space-y-6 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <Truck className="w-5 h-5 text-blue-600" />
+              2. Cấu Hình Phí Vận Chuyển & Ngưỡng Miễn Phí Ship (Free Shipping Threshold)
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Cài đặt mức chi tiêu tối thiểu để khách được Free Ship và phí ship mặc định nội địa Mỹ.
+            </p>
+          </div>
+
+          {shippingSavedSuccess && (
+            <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold flex items-center gap-1.5 animate-in fade-in">
+              <CheckCircle2 size={13} /> Đã lưu thành công
+            </span>
+          )}
+        </div>
+
+        {/* Strategy Advice Banner */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-extrabold text-blue-900 flex items-center gap-1.5">
+              <TrendingUp className="w-4 h-4 text-blue-600" /> Gợi Ý Mức Ngưỡng Tối Ưu Lợi Nhuận:
+            </span>
+            <span className="bg-blue-600 text-white font-mono font-black text-[10px] px-2.5 py-0.5 rounded-full">
+              KHUYÊN DÙNG: $70.00 – $75.00
+            </span>
+          </div>
+          <p className="text-slate-600 leading-relaxed font-medium">
+            Mốc <strong>$75.00</strong> tương đương <strong>3 chiếc áo thun</strong> (hoặc 1 áo thun + 1 hoodie). Khi khách có 2 áo ($50), họ sẽ cố mua thêm chiếc thứ 3 để được Free Ship. Tiền lời từ chiếc áo thứ 3 sẽ mang lại cho bạn lợi nhuận ròng hơn <strong>$25.00/đơn</strong> mà không lo bị lỗ tiền ship!
+          </p>
+        </div>
+
+        {/* Inputs Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1 text-xs">
+            <label className="font-bold text-slate-700 uppercase tracking-wider block">
+              Ngưỡng Đơn Free Ship ($) *
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={freeShippingThreshold}
+                onChange={(e) => setFreeShippingThreshold(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-blue-600 font-mono font-black text-base outline-none focus:border-blue-500 focus:bg-white"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">USD</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Đơn từ mức này trở lên sẽ tự động 0đ phí ship.</p>
+          </div>
+
+          <div className="space-y-1 text-xs">
+            <label className="font-bold text-slate-700 uppercase tracking-wider block">
+              Phí Ship Tiêu Chuẩn (Standard) ($)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={standardShippingRate}
+                onChange={(e) => setStandardShippingRate(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold text-base outline-none focus:border-blue-500"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">USD</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Áp dụng khi đơn hàng dưới ngưỡng Free Ship.</p>
+          </div>
+
+          <div className="space-y-1 text-xs">
+            <label className="font-bold text-slate-700 uppercase tracking-wider block">
+              Phí Ship Hỏa Tốc (Express) ($)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                required
+                value={expressShippingRate}
+                onChange={(e) => setExpressShippingRate(Number(e.target.value))}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold text-base outline-none focus:border-blue-500"
+              />
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">USD</span>
+            </div>
+            <p className="text-[11px] text-slate-400">Khách chọn giao nhanh 1-2 ngày.</p>
+          </div>
+        </div>
+
+        {/* Toggle & Announcement Text */}
+        <div className="space-y-4 pt-2 border-t border-slate-100">
+          <div className="space-y-1 text-xs">
+            <label className="font-bold text-slate-700 uppercase tracking-wider block">
+              Khẩu Hiệu / Banner Thông Báo
+            </label>
+            <input
+              type="text"
+              value={shippingBannerText}
+              onChange={(e) => setShippingBannerText(e.target.value)}
+              placeholder="e.g. Free Express US Shipping on orders over $75!"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium text-xs outline-none focus:border-blue-500"
+            />
+          </div>
+
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
+            <div>
+              <span className="font-bold text-slate-800 block">Thanh Tiến Độ Free Shipping Trong Giỏ Hàng (Cart Drawer)</span>
+              <span className="text-[11px] text-slate-500">Hiển thị thông báo "Add $XX more for Free Shipping" và thanh chạy % trong giỏ hàng.</span>
+            </div>
+            <input
+              type="checkbox"
+              checked={shippingBarEnabled}
+              onChange={(e) => setShippingBarEnabled(e.target.checked)}
+              className="w-5 h-5 accent-blue-600 rounded cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
+          <button
+            type="submit"
+            disabled={savingShipping}
+            className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" /> {savingShipping ? "Đang lưu..." : "Lưu Cấu Hình Free Shipping"}
+          </button>
+        </div>
+      </form>
+
+      {/* =========================================================================
+          SECTION 3: BACKEND CONNECTION & API KEY
           ========================================================================= */}
       {/* Security Protection Banner */}
       <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-start gap-3 shadow-sm">
