@@ -19,6 +19,7 @@ import {
   Truck,
   Ticket,
   Layers,
+  Image as ImageIcon,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
@@ -31,6 +32,7 @@ const NAV_ITEMS = [
   { name: "Thuộc tính & Biến thể", href: "/attributes", icon: SlidersHorizontal, adminOnly: true },
   { name: "Mã Giảm Giá (Coupons)", href: "/coupons", icon: Ticket, adminOnly: true },
   { name: "Ưu Đãi Bundle & Save", href: "/bundles", icon: Layers, adminOnly: true },
+  { name: "Quản Lý Banners", href: "/banners", icon: ImageIcon, adminOnly: true },
   { name: "Quản lý Đơn hàng", href: "/orders", icon: ShoppingBag, shipperAllowed: true },
   { name: "Khách hàng", href: "/customers", icon: Users, adminOnly: true },
   { name: "Admin API Keys", href: "/api-keys", icon: Key, superAdminOnly: true },
