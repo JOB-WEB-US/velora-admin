@@ -16,15 +16,19 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { isSidebarOpen } = useUIStore();
-  const { user, isAuthenticated, isHydrated } = useAdminAuthStore();
+  const { user, isAuthenticated, isHydrated, checkAuthSession } = useAdminAuthStore();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    checkAuthSession().then((isAuthed) => {
+      if (!isAuthed) {
+        router.push("/login");
+      }
+    });
+  }, [checkAuthSession, router]);
 
   useEffect(() => {
-    // Wait until both React component mounted and Zustand restored state from localStorage
     if (isMounted && isHydrated) {
       if (!isAuthenticated) {
         router.push("/login");

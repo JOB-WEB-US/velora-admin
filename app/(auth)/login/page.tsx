@@ -8,7 +8,7 @@ import { apiClient } from "@/lib/api/client";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const { setAuth, isAuthenticated, isHydrated } = useAdminAuthStore();
+  const { setAuth, isAuthenticated, isHydrated, checkAuthSession } = useAdminAuthStore();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,12 +16,14 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Redirect to dashboard or orders page if already authenticated
+  // Tự động kiểm tra session và chuyển hướng nếu đã đăng nhập
   useEffect(() => {
-    if (isHydrated && isAuthenticated) {
-      router.push("/");
-    }
-  }, [isHydrated, isAuthenticated, router]);
+    checkAuthSession().then((isAuthed) => {
+      if (isAuthed) {
+        router.push("/");
+      }
+    });
+  }, [checkAuthSession, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
