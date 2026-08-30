@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff, ShieldAlert, Truck } from "lucide-react";
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { apiClient } from "@/lib/api/client";
-import { AdminRole } from "@/types/admin";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -13,12 +12,9 @@ export default function AdminLoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedRole, setSelectedRole] = useState<AdminRole>("ADMIN");
-  const [showPassword, setShowPassword] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-
-  const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY || "velora_admin_secret_api_key_2026";
 
   // Redirect to dashboard or orders page if already authenticated
   useEffect(() => {
@@ -33,21 +29,25 @@ export default function AdminLoginPage() {
     setErrorMsg("");
 
     try {
-      // Call Backend API authentication endpoint
+      // Gọi Backend API xác thực email & mật khẩu đã mã hóa Bcrypt
       const { data } = await apiClient.post("/auth/login", { email, password });
 
       if (data.token && data.user) {
-        const userRole = data.user.role || selectedRole;
+        const userRole = data.user.role;
+        if (!["ADMIN", "SUPER_ADMIN", "SHIPPER"].includes(userRole)) {
+          setErrorMsg("Tài khoản của bạn không có quyền truy cập vào cổng quản trị.");
+          return;
+        }
+
         setAuth(
           {
-            id: data.user.id || "admin-01",
+            id: data.user.id,
             email: data.user.email,
-            name: data.user.name || (userRole === "SHIPPER" ? "Shipper User" : "Admin Ty"),
+            name: data.user.name,
             role: userRole,
             avatar: data.user.avatar,
           },
-          data.token,
-          DEFAULT_API_KEY
+          data.token
         );
 
         if (userRole === "SHIPPER") {
@@ -56,37 +56,10 @@ export default function AdminLoginPage() {
           router.push("/");
         }
       } else {
-        setErrorMsg("Đăng nhập thất bại: Không nhận được token.");
+        setErrorMsg("Đăng nhập thất bại: Không nhận được token xác thực từ máy chủ.");
       }
     } catch (err: any) {
-      // Fallback for demo logins
-      if (email === "ty@velora.com" || email === "tu@velora.com" || (selectedRole === "ADMIN" && email)) {
-        setAuth(
-          {
-            id: "admin-01",
-            email,
-            name: email.includes("ty") ? "Admin Ty" : "Admin Tu",
-            role: "ADMIN",
-          },
-          "jwt_admin_token_2026",
-          DEFAULT_API_KEY
-        );
-        router.push("/");
-      } else if (email === "shipper@velora.com" || selectedRole === "SHIPPER") {
-        setAuth(
-          {
-            id: "shipper-01",
-            email,
-            name: "Shipper Express",
-            role: "SHIPPER",
-          },
-          "jwt_shipper_token_2026",
-          DEFAULT_API_KEY
-        );
-        router.push("/orders");
-      } else {
-        setErrorMsg(err.response?.data?.message || "Mật khẩu hoặc email không chính xác!");
-      }
+      setErrorMsg(err.response?.data?.message || "Email hoặc mật khẩu không chính xác!");
     } finally {
       setLoading(false);
     }
@@ -104,37 +77,7 @@ export default function AdminLoginPage() {
             V
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Velora Portal</h1>
-          <p className="text-xs text-slate-500 font-medium">Đăng nhập Cổng Quản Trị Admin & Đơn Vị Vận Chuyển</p>
-        </div>
-
-        {/* Account Role Selector Buttons (Without auto-filling email/password) */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-          <span className="font-extrabold text-slate-700 block">Chọn loại tài khoản muốn đăng nhập:</span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedRole("ADMIN")}
-              className={`flex-1 py-2 px-2.5 rounded-xl border font-extrabold transition text-[11px] flex items-center justify-center gap-1.5 ${
-                selectedRole === "ADMIN"
-                  ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <ShieldAlert className="w-3.5 h-3.5" /> Quyền ADMIN
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedRole("SHIPPER")}
-              className={`flex-1 py-2 px-2.5 rounded-xl border font-extrabold transition text-[11px] flex items-center justify-center gap-1.5 ${
-                selectedRole === "SHIPPER"
-                  ? "bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/20"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-              }`}
-            >
-              <Truck className="w-3.5 h-3.5" /> Quyền SHIPPER
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 font-medium">Cổng Quản Trị Admin & Đơn Vị Vận Chuyển</p>
         </div>
 
         {errorMsg && (
@@ -148,14 +91,14 @@ export default function AdminLoginPage() {
           {/* Email Input */}
           <div className="space-y-1">
             <label className="font-bold text-slate-700 flex items-center gap-1.5">
-              <Mail className="w-4 h-4 text-blue-600" /> {selectedRole === "SHIPPER" ? "Shipper Email *" : "Admin Email *"}
+              <Mail className="w-4 h-4 text-blue-600" /> Email Tài Khoản *
             </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={selectedRole === "SHIPPER" ? "Nhập email shipper..." : "Nhập email admin..."}
+              placeholder="Nhập email quản trị..."
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition"
             />
           </div>
@@ -190,19 +133,15 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-xl text-white font-extrabold text-sm transition shadow-md flex items-center justify-center gap-2 mt-2 ${
-              selectedRole === "SHIPPER"
-                ? "bg-purple-600 hover:bg-purple-700 shadow-purple-600/20"
-                : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
-            }`}
+            className="w-full py-3 rounded-xl text-white font-extrabold text-sm transition shadow-md flex items-center justify-center gap-2 mt-2 bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
           >
-            {loading ? "Đang xác thực..." : `Đăng Nhập (${selectedRole})`} <ArrowRight className="w-4 h-4" />
+            {loading ? "Đang xác thực..." : "Đăng Nhập Quản Trị"} <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4 font-semibold flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          Bảo mật phân quyền RBAC (ADMIN vs SHIPPER)
+          Xác thực bảo mật phân quyền Role-Based (RBAC)
         </div>
       </div>
     </div>

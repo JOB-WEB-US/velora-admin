@@ -27,7 +27,7 @@ export const useAdminAuthStore = create<AdminAuthStore>()(
         set({
           user,
           token,
-          apiKey: apiKey || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "velora_admin_secret_api_key_2026",
+          apiKey: apiKey || null,
           isAuthenticated: true,
         }),
 

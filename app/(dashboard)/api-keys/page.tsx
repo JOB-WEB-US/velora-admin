@@ -91,17 +91,17 @@ export default function ApiKeysPage() {
         ) : null}
       </div>
 
-      {/* Active Header Key Indicator */}
+      {/* Active Auth Indicator */}
       <div className="p-4.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <ShieldCheck className="w-6 h-6 text-emerald-600 shrink-0" />
           <div>
-            <h4 className="text-xs font-extrabold text-slate-900">Header API Key Đang Gửi Trong Request:</h4>
-            <p className="text-sm font-mono font-bold text-emerald-700 mt-0.5">{apiKey || "velora_admin_secret_api_key_2026"}</p>
+            <h4 className="text-xs font-extrabold text-slate-900">Trạng Thái Xác Thực Request:</h4>
+            <p className="text-sm font-mono font-bold text-emerald-700 mt-0.5">JWT Bearer Token Đang Hoạt Động (Role: {user?.role || "ADMIN"})</p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold font-mono">
-          Header: X-Admin-API-Key
+          Header: Authorization Bearer
         </span>
       </div>
 

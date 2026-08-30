@@ -34,7 +34,7 @@ export function useGetAttributes() {
     queryKey: ["admin", "attributes"],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get("/attributes");
+        const { data } = await apiClient.get("/admin/attributes");
         return (
           data.data || {
             types: [],

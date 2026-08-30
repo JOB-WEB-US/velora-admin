@@ -6,7 +6,7 @@ export function useGetProducts() {
   return useQuery<Product[]>({
     queryKey: ["admin", "products"],
     queryFn: async () => {
-      const { data } = await apiClient.get("/products");
+      const { data } = await apiClient.get("/admin/products");
       const rawList = data.data || data;
       return Array.isArray(rawList) ? rawList : [];
     },
@@ -18,10 +18,10 @@ export function useGetProductById(id: string) {
     queryKey: ["admin", "products", id],
     queryFn: async () => {
       try {
-        const { data } = await apiClient.get(`/products/${id}`);
+        const { data } = await apiClient.get(`/admin/products/${id}`);
         return data.data || data;
       } catch {
-        const { data } = await apiClient.get("/products");
+        const { data } = await apiClient.get("/admin/products");
         const list = data.data || data;
         if (Array.isArray(list)) {
           const match = list.find((p: any) => p.id === id || p.slug === id);
