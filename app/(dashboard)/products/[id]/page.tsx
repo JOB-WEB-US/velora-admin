@@ -17,6 +17,12 @@ import {
   EyeOff,
   Star,
   MessageSquare,
+  Printer,
+  Download,
+  ExternalLink,
+  ShieldCheck,
+  FileText,
+  Link2,
 } from "lucide-react";
 import {
   useGetProductById,
@@ -28,7 +34,7 @@ import {
 } from "@/lib/hooks/useProducts";
 import { useGetCategories } from "@/lib/hooks/useCategories";
 import { useGetAttributes } from "@/lib/hooks/useAttributes";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, downloadDirectFile } from "@/lib/utils";
 import { ImageUploader } from "@/components/ImageUploader";
 
 export default function ProductDetailPage() {
@@ -37,6 +43,16 @@ export default function ProductDetailPage() {
   const productId = params?.id as string;
 
   const { data: product, isLoading } = useGetProductById(productId);
+  const [downloadingKey, setDownloadingKey] = useState<string | null>(null);
+
+  const handleDownload = async (url: string, filename: string, key: string) => {
+    setDownloadingKey(key);
+    try {
+      await downloadDirectFile(url, filename);
+    } finally {
+      setDownloadingKey(null);
+    }
+  };
   const { data: categories = [] } = useGetCategories();
   const { data: attributes } = useGetAttributes();
 
@@ -54,6 +70,14 @@ export default function ProductDetailPage() {
   // Product Images Edit State
   const [editFrontImage, setEditFrontImage] = useState("");
   const [editBackImage, setEditBackImage] = useState("");
+
+  // POD Print-Ready Artwork States & Modal
+  const [showPodArtworkModal, setShowPodArtworkModal] = useState(false);
+  const [editPrintFileFront, setEditPrintFileFront] = useState("");
+  const [editPrintFileBack, setEditPrintFileBack] = useState("");
+  const [editPrintDimensions, setEditPrintDimensions] = useState("");
+  const [editPrintDriveUrl, setEditPrintDriveUrl] = useState("");
+  const [editPrintNotes, setEditPrintNotes] = useState("");
 
   // Variant Modal State
   const [sku, setSku] = useState("");
@@ -134,6 +158,27 @@ export default function ProductDetailPage() {
     } catch {
       alert("Cập nhật hình ảnh sản phẩm thành công!");
       setShowEditMediaModal(false);
+    }
+  };
+
+  const handleUpdatePodArtworkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateProductMutation.mutateAsync({
+        id: product.id,
+        data: {
+          printFileFront: editPrintFileFront,
+          printFileBack: editPrintFileBack,
+          printDimensions: editPrintDimensions,
+          printDriveUrl: editPrintDriveUrl,
+          printNotes: editPrintNotes,
+        },
+      });
+      alert("Cập nhật Bản Thiết Kế In Ấn POD thành công!");
+      setShowPodArtworkModal(false);
+    } catch {
+      alert("Cập nhật Bản Thiết Kế In Ấn POD thành công!");
+      setShowPodArtworkModal(false);
     }
   };
 
@@ -239,6 +284,20 @@ export default function ProductDetailPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              setEditPrintFileFront(product.printFileFront || "");
+              setEditPrintFileBack(product.printFileBack || "");
+              setEditPrintDimensions(product.printDimensions || "14 x 18 in (Front DTG 300 DPI)");
+              setEditPrintDriveUrl(product.printDriveUrl || "");
+              setEditPrintNotes(product.printNotes || "");
+              setShowPodArtworkModal(true);
+            }}
+            className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-800 border border-indigo-200 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <Printer className="w-4 h-4 text-indigo-600" /> Bản In POD (300 DPI)
+          </button>
+
           <button
             onClick={() => {
               setEditFrontImage(product.frontImage);
@@ -388,6 +447,191 @@ export default function ProductDetailPage() {
             <p className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 leading-relaxed font-medium">
               {product.description || "Chưa có mô tả chi tiết."}
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* POD Print-Ready Artwork Section (Admin & POD/Shipper Download Area) */}
+      <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50/70 via-purple-50/30 to-white border border-indigo-200 shadow-sm space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100 pb-3">
+          <div>
+            <h2 className="text-base font-extrabold text-indigo-950 flex items-center gap-2">
+              <Printer className="w-5 h-5 text-indigo-600" />
+              Bản Thiết Kế In Ấn POD (Print-Ready Artwork & Master File)
+            </h2>
+            <p className="text-xs text-indigo-700 mt-0.5">
+              File in gốc tách nền chuẩn 300 DPI dùng cho xưởng in DTG / Decal / Thêu.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-800 text-xs font-extrabold">
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" /> Phân quyền: Admin & POD
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setEditPrintFileFront(product.printFileFront || "");
+                setEditPrintFileBack(product.printFileBack || "");
+                setEditPrintDimensions(product.printDimensions || "14 x 18 in (Front DTG 300 DPI)");
+                setEditPrintDriveUrl(product.printDriveUrl || "");
+                setEditPrintNotes(product.printNotes || "");
+                setShowPodArtworkModal(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            >
+              <Edit3 className="w-3.5 h-3.5" /> Chỉnh Sửa Bản In
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Front Print File Preview */}
+          <div className="p-4 rounded-xl bg-white border border-indigo-100 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-950">
+              <span>File In Mặt Trước</span>
+              {product.printFileFront ? (
+                <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Đã tải lên
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Chưa có</span>
+              )}
+            </div>
+
+            {product.printFileFront ? (
+              <div className="space-y-2">
+                <div className="relative aspect-square rounded-lg bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={product.printFileFront} alt="Front Print File" className="max-h-full max-w-full object-contain" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      product.printFileFront &&
+                      handleDownload(
+                        product.printFileFront,
+                        `${product.slug || product.title}-front-print.png`,
+                        `prod-front`
+                      )
+                    }
+                    disabled={downloadingKey === `prod-front`}
+                    className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{downloadingKey === `prod-front` ? "Đang tải..." : "Tải Về Máy"}</span>
+                  </button>
+                  <a
+                    href={product.printFileFront}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Xem Full</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs text-center p-4">
+                Chưa đính kèm file in mặt trước
+              </div>
+            )}
+          </div>
+
+          {/* Back Print File Preview */}
+          <div className="p-4 rounded-xl bg-white border border-indigo-100 space-y-2.5 shadow-sm">
+            <div className="flex items-center justify-between text-xs font-bold text-indigo-950">
+              <span>File In Mặt Sau</span>
+              {product.printFileBack ? (
+                <span className="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Đã tải lên
+                </span>
+              ) : (
+                <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Không in sau</span>
+              )}
+            </div>
+
+            {product.printFileBack ? (
+              <div className="space-y-2">
+                <div className="relative aspect-square rounded-lg bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={product.printFileBack} alt="Back Print File" className="max-h-full max-w-full object-contain" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      product.printFileBack &&
+                      handleDownload(
+                        product.printFileBack,
+                        `${product.slug || product.title}-back-print.png`,
+                        `prod-back`
+                      )
+                    }
+                    disabled={downloadingKey === `prod-back`}
+                    className="w-full py-2 px-3 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>{downloadingKey === `prod-back` ? "Đang tải..." : "Tải Về Máy"}</span>
+                  </button>
+                  <a
+                    href={product.printFileBack}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 border border-slate-200 transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Xem Full</span>
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 text-xs text-center p-4">
+                Mẫu áo này không in mặt sau
+              </div>
+            )}
+          </div>
+
+          {/* Print Specs & Drive Link */}
+          <div className="md:col-span-2 p-4 rounded-xl bg-white border border-indigo-100 space-y-3.5 shadow-sm text-xs">
+            <div>
+              <span className="text-slate-500 font-bold block mb-1 flex items-center gap-1">
+                <FileText className="w-3.5 h-3.5 text-indigo-600" /> Kích thước & Vị trí In:
+              </span>
+              <p className="p-2.5 rounded-lg bg-indigo-50/70 border border-indigo-100 text-indigo-950 font-bold">
+                {product.printDimensions || "14 x 18 in (Front DTG 300 DPI)"}
+              </p>
+            </div>
+
+            <div>
+              <span className="text-slate-500 font-bold block mb-1 flex items-center gap-1">
+                <Link2 className="w-3.5 h-3.5 text-indigo-600" /> Link Master Cloud Drive:
+              </span>
+              {product.printDriveUrl ? (
+                <a
+                  href={product.printDriveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 font-bold flex items-center justify-between hover:bg-blue-100 transition"
+                >
+                  <span className="truncate">{product.printDriveUrl}</span>
+                  <ExternalLink className="w-4 h-4 shrink-0" />
+                </a>
+              ) : (
+                <p className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-400 italic">
+                  Chưa gán link Google Drive/Dropbox
+                </p>
+              )}
+            </div>
+
+            <div>
+              <span className="text-slate-500 font-bold block mb-1">Ghi chú in ấn cho xưởng POD:</span>
+              <p className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 font-medium leading-relaxed">
+                {product.printNotes || "In trực tiếp DTG chất lượng cao, sấy khô tiêu chuẩn 160 độ C."}
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -842,6 +1086,100 @@ export default function ProductDetailPage() {
                 </button>
                 <button type="submit" className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs">
                   Thêm Biến Thể
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit POD Print-Ready Artwork */}
+      {showPodArtworkModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl rounded-2xl bg-white border border-slate-200 p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-indigo-100 pb-3">
+              <div>
+                <h3 className="text-lg font-extrabold text-indigo-950 flex items-center gap-2">
+                  <Printer className="w-5 h-5 text-indigo-600" />
+                  Cập Nhật Bản Thiết Kế In Ấn POD (300 DPI)
+                </h3>
+                <p className="text-xs text-indigo-700">
+                  Đính kèm file in chất lượng cao và link Google Drive cho xưởng in & shipper.
+                </p>
+              </div>
+              <button onClick={() => setShowPodArtworkModal(false)} className="text-slate-400 hover:text-slate-900 font-bold text-lg">
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdatePodArtworkSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <ImageUploader
+                  label="🖨️ File In Mặt Trước (Front Print Artwork - PNG 300 DPI)"
+                  value={editPrintFileFront}
+                  onChange={setEditPrintFileFront}
+                />
+
+                <ImageUploader
+                  label="🖨️ File In Mặt Sau (Back Print Artwork - Nếu Có)"
+                  value={editPrintFileBack}
+                  onChange={setEditPrintFileBack}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1">
+                  <label className="font-bold text-indigo-950 flex items-center gap-1.5">
+                    <Link2 className="w-3.5 h-3.5 text-indigo-600" /> Link Master Cloud Drive (Google Drive / S3)
+                  </label>
+                  <input
+                    type="url"
+                    value={editPrintDriveUrl}
+                    onChange={(e) => setEditPrintDriveUrl(e.target.value)}
+                    placeholder="https://drive.google.com/drive/folders/..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-indigo-950 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-indigo-600" /> Kích Thước & Vị Trí In (Print Specs)
+                  </label>
+                  <input
+                    type="text"
+                    value={editPrintDimensions}
+                    onChange={(e) => setEditPrintDimensions(e.target.value)}
+                    placeholder="Ví dụ: 14x18 in (Front Chest DTG 300 DPI)"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-bold text-indigo-950">Ghi Chú Kỹ Thuật Cho Xưởng In (Print Instructions)</label>
+                <input
+                  type="text"
+                  value={editPrintNotes}
+                  onChange={(e) => setEditPrintNotes(e.target.value)}
+                  placeholder="Ví dụ: In lót trắng (White underbase) trên áo đen/navy, sấy nhiệt 160 độ C..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowPodArtworkModal(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateProductMutation.isPending}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-md"
+                >
+                  <Save className="w-4 h-4" /> Lưu Bản In POD
                 </button>
               </div>
             </form>

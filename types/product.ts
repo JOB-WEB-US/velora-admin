@@ -50,6 +50,11 @@ export interface Product {
   originalPrice?: number;
   frontImage: string;
   backImage?: string;
+  printFileFront?: string;
+  printFileBack?: string;
+  printDimensions?: string;
+  printDriveUrl?: string;
+  printNotes?: string;
   isSale: boolean;
   isFeatured: boolean;
   isActive?: boolean;
@@ -83,6 +88,11 @@ export interface CreateProductInput {
   originalPrice?: number;
   frontImage: string;
   backImage?: string;
+  printFileFront?: string;
+  printFileBack?: string;
+  printDimensions?: string;
+  printDriveUrl?: string;
+  printNotes?: string;
   isSale?: boolean;
   isFeatured?: boolean;
   isActive?: boolean;

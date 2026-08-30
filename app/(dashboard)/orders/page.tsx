@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShoppingBag, Search, Eye, Truck, Lock } from "lucide-react";
+import { ShoppingBag, Search, Eye, Truck, Lock, Sparkles, AlertCircle } from "lucide-react";
 import { useGetOrders, useUpdateOrderStatus } from "@/lib/hooks/useOrders";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { OrderStatus } from "@/types/order";
@@ -20,8 +20,30 @@ export default function OrdersListPage() {
 
   const [activeOrderModal, setActiveOrderModal] = useState<string | null>(null);
   const [newStatus, setNewStatus] = useState<OrderStatus>("PLACED");
-  const [trackingNumber, setTrackingNumber] = useState("");
-  const [carrier, setCarrier] = useState("USPS");
+  const [modalTracking, setModalTracking] = useState("");
+  const [modalCarrier, setModalCarrier] = useState("USPS");
+
+  const generateRandomTracking = (chosenCarrier: string = modalCarrier) => {
+    const digits = Math.floor(100000000000 + Math.random() * 900000000000).toString();
+    const shortDigits = Math.floor(10000000 + Math.random() * 90000000).toString();
+
+    switch (chosenCarrier) {
+      case "USPS":
+        return `940011189956${digits.slice(0, 10)}`;
+      case "FedEx":
+        return `7890${digits.slice(0, 8)}`;
+      case "UPS":
+        return `1Z999AA101${digits.slice(0, 8)}`;
+      case "DHL":
+        return `DHL${digits.slice(0, 10)}`;
+      case "GHTK":
+        return `S${shortDigits}.VN`;
+      case "ViettelPost":
+        return `VTP${shortDigits}VN`;
+      default:
+        return `TRK-${Date.now().toString().slice(-8)}`;
+    }
+  };
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -35,25 +57,36 @@ export default function OrdersListPage() {
     return matchesSearch && matchesStatus;
   });
 
+  const activeOrder = orders.find((o) => o.id === activeOrderModal);
+  const isStatusOrTrackingChanged = activeOrder
+    ? newStatus !== activeOrder.status ||
+      modalTracking.trim() !== (activeOrder.trackingNumber || "") ||
+      modalCarrier !== (activeOrder.carrier || "USPS")
+    : false;
+
   const handleUpdateStatusSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeOrderModal) return;
+    if (!activeOrderModal || !isStatusOrTrackingChanged) return;
+
+    if (newStatus === "SHIPPED" && !modalTracking.trim()) {
+      alert("⚠️ Vui lòng nhập hoặc tạo Mã Vận Đơn trước khi chuyển trạng thái sang SHIPPED (Đã gửi đơn vị vận chuyển)!");
+      return;
+    }
 
     try {
       await updateStatusMutation.mutateAsync({
         id: activeOrderModal,
         payload: {
           status: newStatus,
-          trackingNumber: isShipper ? undefined : (trackingNumber || undefined),
-          carrier: isShipper ? undefined : (carrier || undefined),
+          trackingNumber: modalTracking.trim() ? modalTracking.trim() : undefined,
+          carrier: modalCarrier || undefined,
         },
       });
 
       alert(`Cập nhật trạng thái đơn sang ${newStatus} thành công!`);
       setActiveOrderModal(null);
-    } catch {
-      alert(`Cập nhật trạng thái đơn thành công!`);
-      setActiveOrderModal(null);
+    } catch (err: any) {
+      alert(err.response?.data?.message || `Cập nhật trạng thái đơn thất bại!`);
     }
   };
 
@@ -192,8 +225,8 @@ export default function OrdersListPage() {
                             onClick={() => {
                               setActiveOrderModal(order.id);
                               setNewStatus(order.status);
-                              setTrackingNumber(order.trackingNumber || "");
-                              setCarrier(order.carrier || "USPS");
+                              setModalTracking(order.trackingNumber || "");
+                              setModalCarrier(order.carrier || "USPS");
                             }}
                             className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white transition font-bold text-xs"
                           >
@@ -237,13 +270,13 @@ export default function OrdersListPage() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateStatusSubmit} className="space-y-4 text-sm">
+            <form onSubmit={handleUpdateStatusSubmit} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <label className="font-bold text-slate-700">Trạng Thái Mới *</label>
                 <select
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value as OrderStatus)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-extrabold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-extrabold focus:outline-none focus:border-blue-600"
                 >
                   <option value="PLACED">PLACED (Đã đặt - Chờ in)</option>
                   <option value="PRINTING">PRINTING (Xưởng đang in POD)</option>
@@ -253,53 +286,89 @@ export default function OrdersListPage() {
                 </select>
               </div>
 
-              {/* Carrier & Tracking Number Fields (Readonly for Shipper) */}
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                {isShipper && (
-                  <div className="p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[11px] font-bold flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    Chỉ Admin mới có quyền sửa Mã Vận Đơn & Đơn Vị Vận Chuyển.
+              {/* Carrier & Tracking Input if SHIPPED or already tracked */}
+              {(newStatus === "SHIPPED" || modalTracking || activeOrder?.trackingNumber) && (
+                <div className="space-y-3 pt-1 border-t border-slate-100">
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Đơn Vị Vận Chuyển</label>
+                    <select
+                      value={modalCarrier}
+                      onChange={(e) => {
+                        const newC = e.target.value;
+                        setModalCarrier(newC);
+                        if (!modalTracking) {
+                          setModalTracking(generateRandomTracking(newC));
+                        }
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none focus:border-blue-600"
+                    >
+                      <option value="USPS">USPS Express (Mỹ)</option>
+                      <option value="FedEx">FedEx Ground (Mỹ & Toàn Cầu)</option>
+                      <option value="DHL">DHL Express (Quốc Tế)</option>
+                      <option value="UPS">UPS Worldwide (Mỹ)</option>
+                      <option value="GHTK">Giao Hàng Tiết Kiệm (GHTK - VN)</option>
+                      <option value="ViettelPost">Viettel Post (VN)</option>
+                    </select>
                   </div>
-                )}
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Đơn Vị Vận Chuyển (Carrier)</label>
-                  <select
-                    value={carrier}
-                    disabled={isShipper}
-                    onChange={(e) => setCarrier(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-bold disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  >
-                    <option value="USPS">USPS Express</option>
-                    <option value="FedEx">FedEx Ground</option>
-                    <option value="DHL">DHL Express</option>
-                    <option value="UPS">UPS Worldwide</option>
-                  </select>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-slate-700">Mã Vận Đơn (Tracking)</label>
+                      <button
+                        type="button"
+                        onClick={() => setModalTracking(generateRandomTracking(modalCarrier))}
+                        className="text-[10px] font-bold text-purple-700 hover:text-purple-900 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded border border-purple-200 flex items-center gap-1 cursor-pointer"
+                      >
+                        <Sparkles className="w-3 h-3 text-purple-600" /> Tạo Mã ({modalCarrier})
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={modalTracking}
+                      onChange={(e) => setModalTracking(e.target.value)}
+                      placeholder="VD: 9400111202493019283012..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-bold text-xs focus:outline-none focus:border-purple-600 focus:bg-white"
+                    />
+                  </div>
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Mã Vận Đơn (Tracking Number)</label>
-                  <input
-                    type="text"
-                    value={trackingNumber}
-                    disabled={isShipper}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    placeholder="9400111202493019283012"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono font-medium disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
-                  />
-                </div>
-              </div>
+              {/* Status Hint */}
+              {newStatus === "SHIPPED" && !modalTracking.trim() && (
+                <p className="text-[11px] font-bold text-rose-600 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Bắt buộc nhập Mã Vận Đơn khi chuyển sang SHIPPED.
+                </p>
+              )}
+              {newStatus === "PRINTING" && (
+                <p className="text-[11px] font-medium text-slate-500 flex items-center gap-1">
+                  ℹ️ Đơn hàng chuyển sang xưởng in POD, chưa bắt buộc mã vận đơn.
+                </p>
+              )}
 
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setActiveOrderModal(null)}
-                  className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs"
+                  className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition"
                 >
                   Hủy
                 </button>
-                <button type="submit" className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs">
-                  Cập Nhật
+                <button
+                  type="submit"
+                  disabled={
+                    updateStatusMutation.isPending ||
+                    !isStatusOrTrackingChanged ||
+                    (newStatus === "SHIPPED" && !modalTracking.trim())
+                  }
+                  className={`px-5 py-2.5 rounded-xl font-bold text-xs transition ${
+                    isStatusOrTrackingChanged &&
+                    !updateStatusMutation.isPending &&
+                    !(newStatus === "SHIPPED" && !modalTracking.trim())
+                      ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm"
+                      : "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  {updateStatusMutation.isPending ? "Đang cập nhật..." : "Cập Nhật"}
                 </button>
               </div>
             </form>

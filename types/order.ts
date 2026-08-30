@@ -8,6 +8,12 @@ export interface OrderItem {
     id: string;
     title: string;
     frontImage: string;
+    backImage?: string;
+    printFileFront?: string;
+    printFileBack?: string;
+    printDimensions?: string;
+    printDriveUrl?: string;
+    printNotes?: string;
     slug?: string;
   };
   variantId?: string;

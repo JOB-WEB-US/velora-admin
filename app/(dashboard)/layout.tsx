@@ -61,13 +61,16 @@ export default function DashboardLayout({
     return null;
   }
 
+  const isShipper = user?.role === "SHIPPER";
+
   return (
     <div className="min-h-screen bg-admin-bg text-admin-text">
       <Sidebar />
-      <Header />
+      {!isShipper && <Header />}
       <main
         className={cn(
-          "pt-20 pb-12 transition-all duration-300 min-h-screen",
+          "pb-12 transition-all duration-300 min-h-screen",
+          isShipper ? "pt-8" : "pt-20",
           isSidebarOpen ? "pl-80 pr-8" : "pl-28 pr-8"
         )}
       >

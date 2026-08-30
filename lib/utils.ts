@@ -50,3 +50,21 @@ export function getOrderStatusBadge(status: OrderStatus) {
       return { label: status, bg: "bg-gray-500/10 text-gray-400 border-gray-500/30" };
   }
 }
+
+export async function downloadDirectFile(url: string, filename: string) {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (err) {
+    console.error("Direct download failed, opening in new tab:", err);
+    window.open(url, "_blank");
+  }
+}

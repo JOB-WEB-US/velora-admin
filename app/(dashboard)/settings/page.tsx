@@ -1,25 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
   Settings, 
   Save, 
-  Server, 
-  ShieldCheck, 
-  Eye, 
-  EyeOff, 
-  Lock, 
-  AlertTriangle, 
-  Copy, 
-  Check, 
   Sparkles, 
-  Flame, 
   CheckCircle2,
   Truck,
   TrendingUp,
-  Zap
+  Megaphone,
+  ArrowRight
 } from "lucide-react";
-import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { apiClient } from "@/lib/api/client";
 
 const PARTICLE_PRESET_OPTIONS = [
@@ -34,17 +26,6 @@ const PARTICLE_PRESET_OPTIONS = [
 ];
 
 export default function SettingsPage() {
-  const { apiKey, setApiKey } = useAdminAuthStore();
-
-  const [apiUrl, setApiUrl] = useState(
-    typeof window !== "undefined"
-      ? localStorage.getItem("custom_api_url") || process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1"
-      : "http://localhost:5000/api/v1"
-  );
-  const [currentKey, setCurrentKey] = useState(apiKey || process.env.NEXT_PUBLIC_ADMIN_API_KEY || "velora_admin_secret_api_key_2026");
-  const [showKey, setShowKey] = useState(false);
-  const [copied, setCopied] = useState(false);
-
   // Particle Settings State
   const [selectedTheme, setSelectedTheme] = useState("halloween");
   const [defaultEnabled, setDefaultEnabled] = useState(true);
@@ -123,21 +104,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSaveBackend = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentKey) {
-      alert("Vui lòng nhập Admin API Key!");
-      return;
-    }
-
-    if (typeof window !== "undefined") {
-      localStorage.setItem("custom_api_url", apiUrl);
-    }
-    setApiKey(currentKey);
-
-    alert("Đã lưu và bảo mật cấu hình kết nối thành công!");
-  };
-
   const handleSaveParticleSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingParticles(true);
@@ -169,12 +135,6 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCopyKey = () => {
-    navigator.clipboard.writeText(currentKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   const currentPreset = PARTICLE_PRESET_OPTIONS.find((p) => p.id === selectedTheme) || PARTICLE_PRESET_OPTIONS[0];
 
   return (
@@ -187,10 +147,38 @@ export default function SettingsPage() {
             Cài Đặt & Cấu Hình Hệ Thống
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Quản lý hiệu ứng animation mùa toàn website, kết nối REST API Gateway và bảo mật Admin API Key.
+            Quản lý hiệu ứng animation mùa toàn website và cấu hình chính sách phí vận chuyển / Free Shipping.
           </p>
         </div>
       </div>
+
+      {/* Quick Link Card to Header Announcements Marquee */}
+      <Link
+        href="/announcements"
+        className="p-5 rounded-2xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 border-2 border-orange-200 hover:border-orange-400 transition-all flex items-center justify-between gap-4 group shadow-sm hover:shadow-md"
+      >
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-2xl bg-[#ff7700] text-black flex items-center justify-center font-black shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+            <Megaphone size={24} />
+          </div>
+          <div>
+            <span className="text-sm font-black text-slate-900 flex items-center gap-2 group-hover:text-[#ff7700] transition-colors">
+              📢 Quản Lý Chữ Chạy Header (Top Bar Announcements)
+              <span className="px-2 py-0.5 rounded-full bg-[#ff7700] text-black text-[10px] font-black uppercase">
+                Mới
+              </span>
+            </span>
+            <p className="text-xs text-slate-600 mt-0.5 font-medium">
+              Tùy biến các khẩu hiệu giảm giá, miễn phí ship, quà tặng trên thanh cuộn chạy chữ ở đầu website với kho mẫu gợi ý 1-click.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1 text-xs font-extrabold text-orange-600 group-hover:translate-x-1 transition-transform shrink-0">
+          <span>Tùy Chỉnh Ngay</span>
+          <ArrowRight size={15} />
+        </div>
+      </Link>
 
       {/* =========================================================================
           SECTION 1: SEASONAL PARTICLE ANIMATION MANAGER
@@ -448,97 +436,6 @@ export default function SettingsPage() {
             className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             <Save className="w-4 h-4" /> {savingShipping ? "Đang lưu..." : "Lưu Cấu Hình Free Shipping"}
-          </button>
-        </div>
-      </form>
-
-      {/* =========================================================================
-          SECTION 3: BACKEND CONNECTION & API KEY
-          ========================================================================= */}
-      {/* Security Protection Banner */}
-      <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold flex items-start gap-3 shadow-sm">
-        <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-extrabold text-sm text-amber-950">Cảnh Báo Bảo Mật Admin API Key:</p>
-          <p className="text-amber-800 leading-relaxed font-medium">
-            Admin API Key (`X-Admin-API-Key`) là chìa khóa bí mật dùng để xác thực mọi yêu cầu từ giao diện Admin tới máy chủ Backend Gateway.
-            Để ngăn chặn rò rỉ khi quay video hoặc chia sẻ màn hình, chìa khóa này được <strong>ẨN MẶC ĐỊNH (`••••••••••••`)</strong>.
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSaveBackend} className="p-6 rounded-2xl bg-white border border-slate-200 space-y-6 shadow-sm">
-        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 flex items-center gap-2">
-          <Server className="w-4 h-4" /> 2. Kết Nối Backend REST API Gateway
-        </h2>
-
-        <div className="space-y-4 text-xs">
-          <div className="space-y-1">
-            <label className="font-bold text-slate-700">URL Endpoint REST API (sales-website-be)</label>
-            <input
-              type="text"
-              required
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-bold"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="font-bold text-slate-700 flex items-center justify-between">
-              <span>Admin API Key (`X-Admin-API-Key`) *</span>
-              <span className="text-[11px] text-amber-600 font-bold flex items-center gap-1">
-                <Lock className="w-3 h-3" /> Đã bật chế độ bảo vệ ẩn Key
-              </span>
-            </label>
-            <div className="relative">
-              <input
-                type={showKey ? "text" : "password"}
-                required
-                value={showKey ? currentKey : "••••••••••••••••••••••••"}
-                onChange={(e) => {
-                  setCurrentKey(e.target.value);
-                  if (!showKey) setShowKey(true);
-                }}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3.5 pr-24 py-2.5 text-emerald-700 font-mono font-extrabold text-sm"
-              />
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setShowKey(!showKey)}
-                  className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition text-[11px] font-bold flex items-center gap-1 shadow-sm cursor-pointer"
-                  title={showKey ? "Ẩn mã bí mật" : "Hiện mã bí mật"}
-                >
-                  {showKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-blue-600" />}
-                  {showKey ? "Ẩn Key" : "Hiện Key"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleCopyKey}
-                  className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-slate-900 transition shadow-sm cursor-pointer"
-                  title="Sao chép Key"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-blue-600 border-b border-slate-100 pb-2 pt-2 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4" /> 3. Tiêu Chuẩn Mã Hóa & Bảo Mật Hệ Thống
-        </h2>
-
-        <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs text-slate-700 font-medium">
-          <p>✔️ <strong>API Key Concealment:</strong> Khóa API bí mật được ẩn hoàn toàn dạng mật khẩu (`••••••••••••`), chống chụp màn hình / dòm ngó.</p>
-          <p>✔️ <strong>Data-at-Rest Decryption:</strong> Giải mã AES-256-GCM các thông tin nhạy cảm (Số điện thoại, Địa chỉ, Số tiền) trên giao diện.</p>
-          <p>✔️ <strong>Strict Session Protection:</strong> Tự động chặn các yêu cầu không hợp lệ và bảo vệ phiên làm việc người dùng.</p>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <button type="submit" className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer">
-            <Save className="w-4 h-4" /> Lưu & Áp Dụng Cấu Hình Kết Nối
           </button>
         </div>
       </form>

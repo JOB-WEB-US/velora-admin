@@ -2,7 +2,24 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { DollarSign, ShoppingBag, Package, Users, AlertTriangle, ArrowRight, Truck, CheckCircle2, Clock } from "lucide-react";
+import Image from "next/image";
+import { 
+  DollarSign, 
+  ShoppingBag, 
+  Package, 
+  Users, 
+  AlertTriangle, 
+  ArrowRight, 
+  Truck, 
+  CheckCircle2, 
+  Clock,
+  TrendingUp,
+  Flame,
+  Award,
+  Layers,
+  Sparkles,
+  Percent
+} from "lucide-react";
 import StatCard from "@/components/common/StatCard";
 import RevenueChart from "@/components/features/dashboard/RevenueChart";
 import OrdersStatusPieChart from "@/components/features/dashboard/OrdersStatusPieChart";
@@ -66,6 +83,13 @@ export default function DashboardOverviewPage() {
     ? (((currentCustomersSet.size - prevCustomersSet.size) / prevCustomersSet.size) * 100).toFixed(1)
     : currentCustomersSet.size > 0 ? "+100.0" : "0.0";
 
+  // Average Order Value (AOV)
+  const averageOrderValue = orders.length > 0 ? totalRevenue / orders.length : 0;
+
+  // Delivery Fulfillment Success Rate
+  const deliveredOrdersCount = orders.filter((o) => o.status === "DELIVERED").length;
+  const fulfillmentRate = orders.length > 0 ? ((deliveredOrdersCount / orders.length) * 100).toFixed(0) : "0";
+
   // Products Metrics
   const totalVariantsCount = products.reduce((sum, p) => sum + (p.variants?.length || 0), 0);
   const pendingOrdersCount = orders.filter((o) => o.status === "PLACED" || o.status === "PRINTING").length;
@@ -76,6 +100,48 @@ export default function DashboardOverviewPage() {
       : timeframe === "month"
       ? "So với tháng trước"
       : "So với năm trước";
+
+  // Compute Best Sellers Leaderboard
+  const productSalesMap: Record<string, { id: string; title: string; image: string; type: string; totalSold: number; totalRevenue: number }> = {};
+
+  orders.forEach((o) => {
+    o.items?.forEach((item) => {
+      const pid = item.productId || item.product?.id || item.productType || "pod-item";
+      const title = item.product?.title || item.productType || "Sản Phẩm POD";
+      const image = item.product?.frontImage || "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=300&q=80";
+      const type = item.productType || "T-Shirt";
+      const qty = item.quantity || 1;
+      const rev = (item.price || 0) * qty;
+
+      if (!productSalesMap[pid]) {
+        productSalesMap[pid] = { id: pid, title, image, type, totalSold: 0, totalRevenue: 0 };
+      }
+      productSalesMap[pid].totalSold += qty;
+      productSalesMap[pid].totalRevenue += rev;
+    });
+  });
+
+  const bestSellers = Object.values(productSalesMap)
+    .sort((a, b) => b.totalRevenue - a.totalRevenue)
+    .slice(0, 5);
+
+  const maxRevenueSeller = bestSellers.length > 0 ? bestSellers[0].totalRevenue || 1 : 1;
+
+  // Revenue by Product Type Breakdown
+  const typeSalesMap: Record<string, { type: string; totalRevenue: number; totalSold: number }> = {};
+  orders.forEach((o) => {
+    o.items?.forEach((item) => {
+      const type = item.productType || "T-Shirt";
+      const qty = item.quantity || 1;
+      const rev = (item.price || 0) * qty;
+      if (!typeSalesMap[type]) {
+        typeSalesMap[type] = { type, totalRevenue: 0, totalSold: 0 };
+      }
+      typeSalesMap[type].totalRevenue += rev;
+      typeSalesMap[type].totalSold += qty;
+    });
+  });
+  const typeSalesList = Object.values(typeSalesMap).sort((a, b) => b.totalRevenue - a.totalRevenue);
 
   // Find Low Stock Variants
   const lowStockItems: { productTitle: string; sku: string; size: string; color: string; stock: number }[] = [];
@@ -96,30 +162,36 @@ export default function DashboardOverviewPage() {
   return (
     <div className="space-y-8">
       {/* Top Welcome Banner */}
-      <div className="p-7 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-lg shadow-blue-500/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-7 rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-xl shadow-blue-500/15 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Tổng Quan Bán Hàng & In Ấn POD</h1>
+          <div className="flex items-center gap-2">
+            <span className="px-3 py-0.5 rounded-full bg-white/20 text-white text-xs font-black uppercase tracking-wider backdrop-blur-md">
+              Realtime Metrics
+            </span>
+            <span className="text-xs text-blue-200 font-bold">• Cập nhật tự động</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tight mt-1.5">Tổng Quan Doanh Thu & Xưởng In POD</h1>
           <p className="text-sm text-blue-100 mt-1 font-medium">
-            Hệ thống quản lý sản phẩm, tồn kho kho hàng và quy trình trạng thái đơn hàng POD realtime.
+            Hệ thống quản lý sản phẩm, tồn kho và quy trình phân tích kinh doanh đa chiều.
           </p>
         </div>
 
         {/* Timeframe Switcher (Tuần / Tháng / Năm) */}
-        <div className="flex items-center gap-2 bg-blue-700/60 p-1.5 rounded-xl border border-white/20">
-          <span className="text-xs font-bold text-blue-100 px-2">Thời gian:</span>
+        <div className="flex items-center gap-1.5 bg-blue-800/60 p-1.5 rounded-2xl border border-white/20 backdrop-blur-md self-start md:self-auto">
+          <span className="text-xs font-bold text-blue-200 px-2">Kỳ so sánh:</span>
           {(["week", "month", "year"] as const).map((mode) => (
             <button
               key={mode}
               onClick={() => setTimeframe(mode)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-extrabold transition ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
                 timeframe === mode
-                  ? "bg-white text-blue-700 shadow"
-                  : "text-blue-100 hover:bg-blue-600/50"
+                  ? "bg-white text-blue-700 shadow-md scale-102"
+                  : "text-blue-100 hover:bg-white/10"
               }`}
             >
-              {mode === "week" && "Tuần"}
-              {mode === "month" && "Tháng"}
-              {mode === "year" && "Năm"}
+              {mode === "week" && "Tuần Này"}
+              {mode === "month" && "Tháng Này"}
+              {mode === "year" && "Năm Nay"}
             </button>
           ))}
         </div>
@@ -146,19 +218,19 @@ export default function DashboardOverviewPage() {
         />
 
         <StatCard
-          title="Sản Phẩm Đang Bán"
-          value={products.length}
-          icon={Package}
-          subtitle={`${totalVariantsCount} biến thể SKU kho`}
+          title="Giá Trị Đơn TB (AOV)"
+          value={formatCurrency(averageOrderValue)}
+          icon={TrendingUp}
+          subtitle={`Tỷ lệ hoàn tất đơn: ${fulfillmentRate}% (${deliveredOrdersCount}/${orders.length})`}
         />
 
         <StatCard
-          title="Khách Hàng"
+          title="Khách Hàng Mua"
           value={totalCustomersSet.size}
           icon={Users}
           change={`${Number(customerGrowthRate) >= 0 ? "+" : ""}${customerGrowthRate}%`}
           changeType={Number(customerGrowthRate) >= 0 ? "positive" : "negative"}
-          subtitle={`${totalCustomersSet.size} khách duy nhất • ${timeframeLabel}`}
+          subtitle={`${totalVariantsCount} SKU • ${timeframeLabel}`}
         />
       </div>
 
@@ -169,6 +241,117 @@ export default function DashboardOverviewPage() {
         </div>
         <div>
           <OrdersStatusPieChart />
+        </div>
+      </div>
+
+      {/* SECTION: Best-Sellers Leaderboard & Revenue by Category */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Top 5 Best Selling Designs (2/3 width) */}
+        <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <Flame className="w-5 h-5 text-amber-500" />
+                Top Sản Phẩm Bán Chạy Nhất (Best Sellers Leaderboard)
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Xếp hạng các mẫu áo/sản phẩm tạo ra doanh thu cao nhất trên website.
+              </p>
+            </div>
+            <Link href="/products" className="text-xs font-bold text-blue-600 hover:underline flex items-center gap-1">
+              Xem kho áo <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="space-y-3.5">
+            {bestSellers.length > 0 ? (
+              bestSellers.map((item, idx) => {
+                const percent = Math.min(100, Math.round((item.totalRevenue / maxRevenueSeller) * 100));
+                return (
+                  <div key={item.id || idx} className="p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`w-6 h-6 rounded-full flex items-center justify-center font-black text-xs shrink-0 ${
+                          idx === 0 ? "bg-amber-400 text-black shadow-sm shadow-amber-400/50" :
+                          idx === 1 ? "bg-slate-300 text-slate-800" :
+                          idx === 2 ? "bg-amber-700 text-white" :
+                          "bg-slate-200 text-slate-600"
+                        }`}>
+                          #{idx + 1}
+                        </span>
+
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-slate-200 shrink-0 border border-slate-300">
+                          <Image src={item.image} alt={item.title} fill className="object-cover" unoptimized />
+                        </div>
+
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 truncate">{item.title}</p>
+                          <p className="text-[11px] text-slate-500 font-medium">Dòng: <span className="font-bold text-blue-600">{item.type}</span> • Đã bán: <span className="font-bold text-slate-800">{item.totalSold} cái</span></p>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-extrabold text-emerald-600 font-mono block">
+                          {formatCurrency(item.totalRevenue)}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold">{percent}% doanh số</span>
+                      </div>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="w-full h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 transition-all duration-500"
+                        style={{ width: `${percent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-slate-400 py-6 text-center">Chưa có dữ liệu sản phẩm bán ra.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Right: Revenue by Product Type Breakdown (1/3 width) */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-4">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <Layers className="w-5 h-5 text-indigo-600" />
+              Doanh Thu Theo Dòng Áo
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">Tỷ trọng doanh thu theo từng danh mục áo.</p>
+          </div>
+
+          <div className="space-y-3">
+            {typeSalesList.length > 0 ? (
+              typeSalesList.map((t, idx) => {
+                const totalRev = totalRevenue || 1;
+                const sharePercent = Math.round((t.totalRevenue / totalRev) * 100);
+                return (
+                  <div key={idx} className="space-y-1 text-xs">
+                    <div className="flex justify-between font-bold">
+                      <span className="text-slate-800">{t.type} ({t.totalSold} cái)</span>
+                      <span className="text-emerald-600 font-mono">{formatCurrency(t.totalRevenue)} ({sharePercent}%)</span>
+                    </div>
+                    <div className="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          idx === 0 ? "bg-blue-600" :
+                          idx === 1 ? "bg-purple-600" :
+                          idx === 2 ? "bg-amber-500" : "bg-emerald-500"
+                        }`}
+                        style={{ width: `${sharePercent}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-xs text-slate-400 py-6 text-center">Chưa có số liệu loại áo.</p>
+            )}
+          </div>
         </div>
       </div>
 

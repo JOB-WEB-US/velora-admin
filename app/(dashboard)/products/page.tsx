@@ -174,6 +174,11 @@ export default function ProductsListPage() {
                           {product.title}
                         </Link>
                         <div className="text-xs text-slate-500 font-mono truncate">{product.slug}</div>
+                        {product.printFileFront && (
+                          <span className="inline-flex items-center gap-1 text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md font-extrabold border border-indigo-200 mt-1">
+                            🖨️ Có Bản In POD
+                          </span>
+                        )}
                       </td>
 
                       {/* Category */}
