@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
+import { apiClient } from "@/lib/api/client";
+import { useLanguageStore } from "@/store/useLanguageStore";
 import { 
   Layers, 
   Sparkles, 
@@ -41,8 +43,10 @@ interface BundleConfig {
 const STRATEGY_PRESETS = [
   {
     id: "standard_apparel",
-    name: "⭐ Chuẩn Vàng E-Commerce Mỹ (Khuyên Dùng)",
-    description: "Tối ưu hóa lợi nhuận ròng cao nhất. Giữ giá 1 áo nguyên bản, chiết khấu nhẹ 2 áo (10%) và tặng Free Ship ở 3 áo (20%).",
+    nameVi: "⭐ Chuẩn Vàng E-Commerce Mỹ (Khuyên Dùng)",
+    nameEn: "⭐ Gold Standard US E-Commerce (Recommended)",
+    descVi: "Tối ưu hóa lợi nhuận ròng cao nhất. Giữ giá 1 áo nguyên bản, chiết khấu nhẹ 2 áo (10%) và tặng Free Ship ở 3 áo (20%).",
+    descEn: "Maximizes net margin. Keeps 1 item at standard price, 10% off for 2 items, 20% off + Free Shipping for 3 items.",
     badge: "RECOMMENDED",
     tiers: [
       { id: "tier-1", quantity: 1, discountType: "percentage" as const, discountValue: 0, badgeText: "", freeShipping: false, isPopular: false },
@@ -52,8 +56,10 @@ const STRATEGY_PRESETS = [
   },
   {
     id: "aggressive_volume",
-    name: "🚀 Đẩy Mạnh Số Lượng / Xả Kho (Aggressive)",
-    description: "Khuyến khích khách mua combo 3-4 áo cho gia đình/bạn bè với chiết khấu sâu hơn.",
+    nameVi: "🚀 Đẩy Mạnh Số Lượng / Xả Kho (Aggressive)",
+    nameEn: "🚀 High Volume / Liquidation (Aggressive)",
+    descVi: "Khuyến khích khách mua combo 3-4 áo cho gia đình/bạn bè với chiết khấu sâu hơn.",
+    descEn: "Encourages buying combos of 3-4 shirts for family & friends with deeper volume discounts.",
     badge: "HIGH VOLUME",
     tiers: [
       { id: "tier-1", quantity: 1, discountType: "percentage" as const, discountValue: 0, badgeText: "", freeShipping: false, isPopular: false },
@@ -64,8 +70,10 @@ const STRATEGY_PRESETS = [
   },
   {
     id: "fixed_dollar",
-    name: "💵 Giảm Giá Tiền Mặt Cố Định ($)",
-    description: "Đánh vào tâm lý thấy rõ số tiền được bớt (ví dụ: bớt $5 khi mua 2 áo, bớt $12 khi mua 3 áo).",
+    nameVi: "💵 Giảm Giá Tiền Mặt Cố Định ($)",
+    nameEn: "💵 Fixed Dollar Discount ($)",
+    descVi: "Đánh vào tâm lý thấy rõ số tiền được bớt (ví dụ: bớt $5 khi mua 2 áo, bớt $12 khi mua 3 áo).",
+    descEn: "Direct psychological cash savings (e.g. Save $5 on 2 items, save $12 on 3 items).",
     badge: "CASH OFF",
     tiers: [
       { id: "tier-1", quantity: 1, discountType: "fixed" as const, discountValue: 0, badgeText: "", freeShipping: false, isPopular: false },
@@ -76,6 +84,9 @@ const STRATEGY_PRESETS = [
 ];
 
 export default function BundlesManagementPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
+
   const [config, setConfig] = useState<BundleConfig>({
     enabled: true,
     title: "Bundle & Save More!",
@@ -93,8 +104,8 @@ export default function BundlesManagementPage() {
   const sampleBasePrice = 24.99;
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/v1/settings/bundles")
-      .then((res) => res.json())
+    apiClient.get("/settings/bundles")
+      .then((res) => res.data)
       .then((data) => {
         if (data.success && data.data) {
           setConfig(data.data);
@@ -134,7 +145,7 @@ export default function BundlesManagementPage() {
 
   const handleRemoveTier = (index: number) => {
     if (config.tiers.length <= 1) {
-      alert("Cần giữ ít nhất 1 mốc cấu hình!");
+      alert(isVi ? "Cần giữ ít nhất 1 mốc cấu hình!" : "At least 1 tier configuration must be kept!");
       return;
     }
     const updated = config.tiers.filter((_, i) => i !== index);
@@ -146,21 +157,15 @@ export default function BundlesManagementPage() {
     setSavedSuccess(false);
 
     try {
-      const res = await fetch("http://localhost:5000/api/v1/settings/bundles", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(config),
-      });
-      const data = await res.json();
-
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Lỗi khi lưu cấu hình.");
+      const { data } = await apiClient.post("/settings/bundles", config);
+      if (!data.success) {
+        throw new Error(data.message || (isVi ? "Lỗi khi lưu cấu hình." : "Error saving configuration."));
       }
 
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
     } catch (err: any) {
-      alert("Lỗi: " + err.message);
+      alert((isVi ? "Lỗi: " : "Error: ") + err.message);
     } finally {
       setSaving(false);
     }
@@ -172,10 +177,12 @@ export default function BundlesManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2.5">
-            <Layers className="w-7 h-7 text-blue-600" /> Quản Lý Ưu Đãi Mua Nhiều (Bundle & Save)
+            <Layers className="w-7 h-7 text-blue-600" /> {isVi ? "Quản Lý Ưu Đãi Mua Nhiều (Bundle & Save)" : "Volume Discounts & Bundles (Bundle & Save)"}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Thiết lập bảng giá chiết khấu theo số lượng (Volume Tiers) để tăng giá trị đơn hàng trung bình (AOV) và lợi nhuận ròng.
+            {isVi 
+              ? "Thiết lập bảng giá chiết khấu theo số lượng (Volume Tiers) để tăng giá trị đơn hàng trung bình (AOV) và lợi nhuận ròng."
+              : "Configure volume tiered discounts to maximize Average Order Value (AOV) and net profit margins."}
           </p>
         </div>
 
@@ -185,20 +192,18 @@ export default function BundlesManagementPage() {
           className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-500/20 transition cursor-pointer disabled:opacity-50 self-start sm:self-auto"
         >
           <Save className="w-4 h-4" />
-          {saving ? "Đang Lưu..." : "Lưu Cấu Hình"}
+          {saving ? (isVi ? "Đang Lưu..." : "Saving...") : (isVi ? "Lưu Cấu Hình" : "Save Settings")}
         </button>
       </div>
 
       {savedSuccess && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-3 text-emerald-800 text-sm font-bold animate-fadeIn">
           <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
-          <span>Cấu hình Bundle & Save đã được cập nhật thành công và áp dụng trực tiếp lên cửa hàng!</span>
+          <span>{isVi ? "Cấu hình Bundle & Save đã được cập nhật thành công và áp dụng trực tiếp lên cửa hàng!" : "Bundle & Save configuration updated successfully and applied live to the storefront!"}</span>
         </div>
       )}
 
-      {/* =========================================================================
-          STRATEGY & UNIT ECONOMICS BREAKDOWN GUIDE
-          ========================================================================= */}
+      {/* STRATEGY & UNIT ECONOMICS BREAKDOWN GUIDE */}
       <div className="bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl border border-slate-800 space-y-6">
         <div className="flex items-center gap-3">
           <div className="p-2.5 rounded-2xl bg-blue-500/20 text-blue-400 border border-blue-500/30">
@@ -206,9 +211,11 @@ export default function BundlesManagementPage() {
           </div>
           <div>
             <h2 className="text-lg font-black uppercase tracking-wider text-white">
-              Phân Tích Chiến Lược Giá Tối Ưu (Unit Economics Analysis)
+              {isVi ? "Phân Tích Chiến Lược Giá Tối Ưu (Unit Economics Analysis)" : "Unit Economics & Profit Margin Analysis"}
             </h2>
-            <p className="text-xs text-slate-300 font-medium">Vì sao không cần tăng giá 1 áo mà shop vẫn lãi gấp nhiều lần khi khách mua 2-3 áo?</p>
+            <p className="text-xs text-slate-300 font-medium">
+              {isVi ? "Vì sao không cần tăng giá 1 áo mà shop vẫn lãi gấp nhiều lần khi khách mua 2-3 áo?" : "Why volume discounts multiply your net profit without raising base product prices"}
+            </p>
           </div>
         </div>
 
@@ -217,38 +224,38 @@ export default function BundlesManagementPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-white/5 text-slate-300 font-bold uppercase text-[10px] border-b border-white/10">
               <tr>
-                <th className="py-3 px-4">Gói mua</th>
-                <th className="py-3 px-4">Giá khách trả</th>
-                <th className="py-3 px-4">Giá vốn in áo</th>
-                <th className="py-3 px-4">Tiền chạy Ads (CAC)</th>
-                <th className="py-3 px-4">Tiền Ship & Cổng thanh toán</th>
-                <th className="py-3 px-4 text-emerald-400 font-black">LỢI NHUẬN RÒNG BỎ TÚI</th>
+                <th className="py-3 px-4">{isVi ? "Gói mua" : "Bundle Tier"}</th>
+                <th className="py-3 px-4">{isVi ? "Giá khách trả" : "Customer Pays"}</th>
+                <th className="py-3 px-4">{isVi ? "Giá vốn in áo" : "Production Cost (POD)"}</th>
+                <th className="py-3 px-4">{isVi ? "Tiền chạy Ads (CAC)" : "Ad Spend (CAC)"}</th>
+                <th className="py-3 px-4">{isVi ? "Tiền Ship & Cổng thanh toán" : "Shipping & Fees"}</th>
+                <th className="py-3 px-4 text-emerald-400 font-black">{isVi ? "LỢI NHUẬN RÒNG BỎ TÚI" : "NET PROFIT (TAKE HOME)"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10 text-slate-200">
               <tr>
-                <td className="py-3.5 px-4 font-bold text-white">1 Áo (Giá gốc)</td>
+                <td className="py-3.5 px-4 font-bold text-white">{isVi ? "1 Áo (Giá gốc)" : "1 Shirt (Base Price)"}</td>
                 <td className="py-3.5 px-4 font-semibold">$24.99</td>
                 <td className="py-3.5 px-4 text-slate-400">-$9.50</td>
                 <td className="py-3.5 px-4 text-rose-400 font-bold">-$10.00</td>
                 <td className="py-3.5 px-4 text-slate-400">-$4.49</td>
-                <td className="py-3.5 px-4 font-black text-emerald-400 text-sm">$1.00 <span className="text-[10px] text-slate-400 font-normal">(Lãi mỏng)</span></td>
+                <td className="py-3.5 px-4 font-black text-emerald-400 text-sm">$1.00 <span className="text-[10px] text-slate-400 font-normal">{isVi ? "(Lãi mỏng)" : "(Thin margin)"}</span></td>
               </tr>
               <tr className="bg-blue-600/10">
-                <td className="py-3.5 px-4 font-bold text-blue-400">2 Áo (Giảm 10%) 🔥</td>
-                <td className="py-3.5 px-4 font-semibold">$44.98 <span className="text-[10px] text-slate-400">($22.49/áo)</span></td>
+                <td className="py-3.5 px-4 font-bold text-blue-400">{isVi ? "2 Áo (Giảm 10%) 🔥" : "2 Shirts (10% OFF) 🔥"}</td>
+                <td className="py-3.5 px-4 font-semibold">$44.98 <span className="text-[10px] text-slate-400">{isVi ? "($22.49/áo)" : "($22.49/shirt)"}</span></td>
                 <td className="py-3.5 px-4 text-slate-400">-$19.00</td>
-                <td className="py-3.5 px-4 text-emerald-400 font-bold">-$10.00 <span className="text-[10px] text-slate-400">(Không tốn thêm)</span></td>
+                <td className="py-3.5 px-4 text-emerald-400 font-bold">-$10.00 <span className="text-[10px] text-slate-400">{isVi ? "(Không tốn thêm)" : "(Zero extra CAC)"}</span></td>
                 <td className="py-3.5 px-4 text-slate-400">-$5.98</td>
-                <td className="py-3.5 px-4 font-black text-emerald-400 text-base">$10.00 🚀 <span className="text-[10px] text-emerald-300 font-bold">(Lãi gấp 10 lần)</span></td>
+                <td className="py-3.5 px-4 font-black text-emerald-400 text-base">$10.00 🚀 <span className="text-[10px] text-emerald-300 font-bold">{isVi ? "(Lãi gấp 10 lần)" : "(10x Profit!)"}</span></td>
               </tr>
               <tr className="bg-emerald-600/10">
-                <td className="py-3.5 px-4 font-bold text-amber-400">3 Áo (Giảm 20% + Free Ship) 🏆</td>
-                <td className="py-3.5 px-4 font-semibold">$59.97 <span className="text-[10px] text-slate-400">($19.99/áo)</span></td>
+                <td className="py-3.5 px-4 font-bold text-amber-400">{isVi ? "3 Áo (Giảm 20% + Free Ship) 🏆" : "3 Shirts (20% OFF + Free Ship) 🏆"}</td>
+                <td className="py-3.5 px-4 font-semibold">$59.97 <span className="text-[10px] text-slate-400">{isVi ? "($19.99/áo)" : "($19.99/shirt)"}</span></td>
                 <td className="py-3.5 px-4 text-slate-400">-$28.50</td>
-                <td className="py-3.5 px-4 text-emerald-400 font-bold">-$10.00 <span className="text-[10px] text-slate-400">(Không tốn thêm)</span></td>
+                <td className="py-3.5 px-4 text-emerald-400 font-bold">-$10.00 <span className="text-[10px] text-slate-400">{isVi ? "(Không tốn thêm)" : "(Zero extra CAC)"}</span></td>
                 <td className="py-3.5 px-4 text-slate-400">-$6.47</td>
-                <td className="py-3.5 px-4 font-black text-emerald-400 text-base">$15.00 🚀 <span className="text-[10px] text-emerald-300 font-bold">(Lãi gấp 15 lần)</span></td>
+                <td className="py-3.5 px-4 font-black text-emerald-400 text-base">$15.00 🚀 <span className="text-[10px] text-emerald-300 font-bold">{isVi ? "(Lãi gấp 15 lần)" : "(15x Profit!)"}</span></td>
               </tr>
             </tbody>
           </table>
@@ -257,42 +264,40 @@ export default function BundlesManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-300 pt-1">
           <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-1">
             <strong className="text-white font-bold block flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-amber-400" /> Tiết kiệm 100% chi phí Ads thứ 2:
+              <Zap className="w-4 h-4 text-amber-400" /> {isVi ? "Tiết kiệm 100% chi phí Ads thứ 2:" : "Save 100% on incremental CAC:"}
             </strong>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Bạn không tốn thêm tiền quảng cáo để thuyết phục người khách đó mua thêm chiếc áo thứ 2 hoặc thứ 3.
+              {isVi ? "Bạn không tốn thêm tiền quảng cáo để thuyết phục người khách đó mua thêm chiếc áo thứ 2 hoặc thứ 3." : "Zero additional advertising acquisition cost to have the same buyer add a 2nd or 3rd item."}
             </p>
           </div>
 
           <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-1">
             <strong className="text-white font-bold block flex items-center gap-1.5">
-              <Truck className="w-4 h-4 text-blue-400" /> Tối ưu chi phí vận chuyển gộp:
+              <Truck className="w-4 h-4 text-blue-400" /> {isVi ? "Tối ưu chi phí vận chuyển gộp:" : "Optimized bundled shipping:"}
             </strong>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Bưu điện tính phí ship theo trọng lượng gói hàng, chiếc áo thứ 2 và 3 chỉ tốn thêm ~$1.50 thay vì tính trọn $4.99 mỗi gói.
+              {isVi ? "Bưu điện tính phí ship theo trọng lượng gói hàng, chiếc áo thứ 2 và 3 chỉ tốn thêm ~$1.50 thay vì tính trọn $4.99 mỗi gói." : "Carriers charge incremental weight; the 2nd and 3rd shirts cost ~$1.50 extra to ship instead of $4.99 each."}
             </p>
           </div>
 
           <div className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-1">
             <strong className="text-white font-bold block flex items-center gap-1.5">
-              <CheckCircle className="w-4 h-4 text-emerald-400" /> Khách hàng luôn hài lòng:
+              <CheckCircle className="w-4 h-4 text-emerald-400" /> {isVi ? "Khách hàng luôn hài lòng:" : "Customer satisfaction & value:"}
             </strong>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Khách muốn mua 1 áo vẫn mua giá gốc bình thường ($24.99), khách mua combo cảm thấy được ưu đãi khủng.
+              {isVi ? "Khách muốn mua 1 áo vẫn mua giá gốc bình thường ($24.99), khách mua combo cảm thấy được ưu đãi khủng." : "Single-item shoppers pay full price ($24.99), while multi-item buyers feel rewarded with steep savings."}
             </p>
           </div>
         </div>
       </div>
 
-      {/* =========================================================================
-          1-CLICK PRESET TEMPLATES
-          ========================================================================= */}
+      {/* 1-CLICK PRESET TEMPLATES */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-5">
         <div>
           <h2 className="text-base font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-blue-600" /> Chọn Mẫu Cấu Hình Tối Ưu (1-Click Presets)
+            <Sparkles className="w-5 h-5 text-blue-600" /> {isVi ? "Chọn Mẫu Cấu Hình Tối Ưu (1-Click Presets)" : "Choose Optimal Strategy (1-Click Presets)"}
           </h2>
-          <p className="text-xs text-slate-500 mt-0.5">Bấm chọn gói mẫu bên dưới để tự động điền các mốc giá chuẩn.</p>
+          <p className="text-xs text-slate-500 mt-0.5">{isVi ? "Bấm chọn gói mẫu bên dưới để tự động điền các mốc giá chuẩn." : "Click any preset below to instantly populate battle-tested pricing tiers."}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -315,17 +320,17 @@ export default function BundlesManagementPage() {
                     </span>
                     {isCurrentActive && (
                       <span className="text-xs font-bold text-blue-600 flex items-center gap-1">
-                        <CheckCircle size={14} /> Đang chọn
+                        <CheckCircle size={14} /> {isVi ? "Đang chọn" : "Active"}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-sm font-black text-slate-900">{preset.name}</h3>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{preset.description}</p>
+                  <h3 className="text-sm font-black text-slate-900">{isVi ? preset.nameVi : preset.nameEn}</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{isVi ? preset.descVi : preset.descEn}</p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between text-xs font-bold text-slate-700">
-                  <span>{preset.tiers.length} Mốc Tiers</span>
-                  <span className="text-blue-600">Áp Dụng Mẫu →</span>
+                  <span>{preset.tiers.length} {isVi ? "Mốc Tiers" : "Tiers"}</span>
+                  <span className="text-blue-600">{isVi ? "Áp Dụng Mẫu →" : "Apply Preset →"}</span>
                 </div>
               </div>
             );
@@ -333,9 +338,7 @@ export default function BundlesManagementPage() {
         </div>
       </div>
 
-      {/* =========================================================================
-          INTERACTIVE TIER BUILDER & LIVE PREVIEW GRID
-          ========================================================================= */}
+      {/* INTERACTIVE TIER BUILDER & LIVE PREVIEW GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
         {/* Left Col: Config Builder Form (7 Cols) */}
@@ -346,9 +349,9 @@ export default function BundlesManagementPage() {
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-black text-slate-800 uppercase tracking-wider block">
-                  Trạng Thái Widget Bundle & Save
+                  {isVi ? "Trạng Thái Widget Bundle & Save" : "Bundle & Save Widget Status"}
                 </label>
-                <p className="text-xs text-slate-500">Bật để hiển thị khối ưu đãi này trên trang chi tiết sản phẩm.</p>
+                <p className="text-xs text-slate-500">{isVi ? "Bật để hiển thị khối ưu đãi này trên trang chi tiết sản phẩm." : "Toggle display on product detail pages."}</p>
               </div>
               <button
                 type="button"
@@ -359,14 +362,14 @@ export default function BundlesManagementPage() {
                     : "bg-slate-200 text-slate-600"
                 }`}
               >
-                {config.enabled ? "ĐANG BẬT (ACTIVE)" : "ĐÃ TẮT (OFF)"}
+                {config.enabled ? (isVi ? "ĐANG BẬT (ACTIVE)" : "ACTIVE") : (isVi ? "ĐÃ TẮT (OFF)" : "DISABLED")}
               </button>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Tiêu đề Widget
+                  {isVi ? "Tiêu đề Widget" : "Widget Title"}
                 </label>
                 <input
                   type="text"
@@ -378,7 +381,7 @@ export default function BundlesManagementPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Mô tả phụ
+                  {isVi ? "Mô tả phụ" : "Subtitle / Tagline"}
                 </label>
                 <input
                   type="text"
@@ -394,14 +397,14 @@ export default function BundlesManagementPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                Cấu Hình Các Mốc Số Lượng (Tiers)
+                {isVi ? "Cấu Hình Các Mốc Số Lượng (Tiers)" : "Tier Configuration (Quantity Breaks)"}
               </span>
               <button
                 type="button"
                 onClick={handleAddTier}
                 className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
               >
-                <Plus size={14} /> Thêm Mốc Mới
+                <Plus size={14} /> {isVi ? "Thêm Mốc Mới" : "Add New Tier"}
               </button>
             </div>
 
@@ -413,13 +416,13 @@ export default function BundlesManagementPage() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono font-black text-xs px-2.5 py-1 bg-white border border-slate-200 rounded-lg text-slate-700">
-                      Mốc #{idx + 1}: Mua {tier.quantity} Áo
+                      {isVi ? `Mốc #${idx + 1}: Mua ${tier.quantity} Áo` : `Tier #${idx + 1}: Buy ${tier.quantity} Items`}
                     </span>
                     <button
                       type="button"
                       onClick={() => handleRemoveTier(idx)}
                       className="text-slate-400 hover:text-rose-500 p-1 transition cursor-pointer"
-                      title="Xóa mốc này"
+                      title={isVi ? "Xóa mốc này" : "Delete this tier"}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -428,7 +431,7 @@ export default function BundlesManagementPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                        Số lượng áo
+                        {isVi ? "Số lượng áo" : "Quantity"}
                       </label>
                       <input
                         type="number"
@@ -441,21 +444,21 @@ export default function BundlesManagementPage() {
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                        Loại giảm
+                        {isVi ? "Loại giảm" : "Discount Type"}
                       </label>
                       <select
                         value={tier.discountType}
                         onChange={(e: any) => handleTierChange(idx, "discountType", e.target.value)}
                         className="w-full px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
                       >
-                        <option value="percentage">Phần trăm (%)</option>
-                        <option value="fixed">Tiền mặt ($)</option>
+                        <option value="percentage">{isVi ? "Phần trăm (%)" : "Percentage (%)"}</option>
+                        <option value="fixed">{isVi ? "Tiền mặt ($)" : "Fixed ($)"}</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                        Mức giảm {tier.discountType === "percentage" ? "(%)" : "($)"}
+                        {isVi ? `Mức giảm ${tier.discountType === "percentage" ? "(%)" : "($)"}` : `Discount ${tier.discountType === "percentage" ? "(%)" : "($)"}`}
                       </label>
                       <input
                         type="number"
@@ -468,7 +471,7 @@ export default function BundlesManagementPage() {
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
-                        Huy hiệu (Badge)
+                        {isVi ? "Huy hiệu (Badge)" : "Badge Text"}
                       </label>
                       <input
                         type="text"
@@ -489,7 +492,7 @@ export default function BundlesManagementPage() {
                         onChange={(e) => handleTierChange(idx, "freeShipping", e.target.checked)}
                         className="w-4 h-4 text-blue-600 rounded"
                       />
-                      <span>Tặng Free Shipping</span>
+                      <span>{isVi ? "Tặng Free Shipping" : "Free Shipping"}</span>
                     </label>
 
                     <label className="flex items-center gap-1.5 cursor-pointer font-bold text-slate-700">
@@ -499,7 +502,7 @@ export default function BundlesManagementPage() {
                         onChange={(e) => handleTierChange(idx, "isPopular", e.target.checked)}
                         className="w-4 h-4 text-blue-600 rounded"
                       />
-                      <span>Đánh dấu nổi bật (Highlight)</span>
+                      <span>{isVi ? "Đánh dấu nổi bật (Highlight)" : "Highlight (Popular)"}</span>
                     </label>
                   </div>
                 </div>
@@ -512,9 +515,9 @@ export default function BundlesManagementPage() {
         <div className="lg:col-span-5 space-y-4 sticky top-24">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <Eye className="w-4 h-4 text-blue-600" /> Xem Trước Giao Diện Trực Quan (Live Preview)
+              <Eye className="w-4 h-4 text-blue-600" /> {isVi ? "Xem Trước Giao Diện Trực Quan (Live Preview)" : "Storefront Live Preview"}
             </span>
-            <span className="text-[10px] text-slate-400 font-bold">Mô phỏng áo $24.99</span>
+            <span className="text-[10px] text-slate-400 font-bold">{isVi ? "Mô phỏng áo $24.99" : "Simulating $24.99 shirt"}</span>
           </div>
 
           {/* Dark E-Commerce Product Box Mockup */}
@@ -549,7 +552,6 @@ export default function BundlesManagementPage() {
                   discountedTotal = Math.max(0, rawTotal - tier.discountValue);
                 }
                 const pricePerItem = discountedTotal / tier.quantity;
-                const savings = rawTotal - discountedTotal;
 
                 return (
                   <div
@@ -579,12 +581,13 @@ export default function BundlesManagementPage() {
 
                         <div>
                           <div className="text-xs font-black text-white">
-                            Buy {tier.quantity} {tier.quantity > 1 ? "Items" : "Item"}
+                            {isVi ? `Mua ${tier.quantity} Áo` : `Buy ${tier.quantity} ${tier.quantity > 1 ? "Items" : "Item"}`}
                           </div>
                           {tier.discountValue > 0 && (
                             <div className="text-[10px] text-emerald-400 font-bold">
-                              Save {tier.discountType === "percentage" ? `${tier.discountValue}%` : `$${tier.discountValue.toFixed(2)}`}
-                              {tier.freeShipping && " • Free Shipping"}
+                              {isVi ? "Giảm " : "Save "}
+                              {tier.discountType === "percentage" ? `${tier.discountValue}%` : `$${tier.discountValue.toFixed(2)}`}
+                              {tier.freeShipping && (isVi ? " • Miễn phí ship" : " • Free Shipping")}
                             </div>
                           )}
                         </div>
@@ -597,7 +600,7 @@ export default function BundlesManagementPage() {
                         </div>
                         {tier.quantity > 1 && (
                           <div className="text-[10px] text-gray-400 font-medium">
-                            (${pricePerItem.toFixed(2)}/each)
+                            (${pricePerItem.toFixed(2)}{isVi ? "/áo" : "/each"})
                           </div>
                         )}
                       </div>
@@ -610,7 +613,7 @@ export default function BundlesManagementPage() {
             {/* Total Savings summary in preview */}
             {previewSelectedTier > 1 && (
               <div className="p-3 bg-[#181818] border border-[#282828] rounded-xl flex items-center justify-between text-xs">
-                <span className="text-gray-300 font-medium">Your Total Savings:</span>
+                <span className="text-gray-300 font-medium">{isVi ? "Tổng tiền tiết kiệm:" : "Your Total Savings:"}</span>
                 <span className="text-emerald-400 font-black">
                   +${((sampleBasePrice * previewSelectedTier) - (sampleBasePrice * previewSelectedTier * 0.9)).toFixed(2)} OFF
                 </span>
@@ -622,7 +625,7 @@ export default function BundlesManagementPage() {
               type="button"
               className="w-full bg-[#ff7700] text-black font-black py-3 rounded-xl text-xs uppercase tracking-wider shadow-lg transition"
             >
-              Add {previewSelectedTier} Items to Cart
+              {isVi ? `Thêm ${previewSelectedTier} Áo Vào Giỏ Hàng` : `Add ${previewSelectedTier} Items to Cart`}
             </button>
           </div>
         </div>

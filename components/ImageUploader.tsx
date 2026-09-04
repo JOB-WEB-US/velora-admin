@@ -3,6 +3,7 @@
 import React, { useRef, useState } from "react";
 import { UploadCloud, Link as LinkIcon, Image as ImageIcon, X, CheckCircle2, Loader2 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 interface ImageUploaderProps {
   label?: string;
@@ -21,6 +22,8 @@ export function ImageUploader({
   compact = false,
   placeholder = "https://images.unsplash.com/...",
 }: ImageUploaderProps) {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
   const [mode, setMode] = useState<"file" | "url">("file");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -28,7 +31,7 @@ export function ImageUploader({
 
   const processAndUploadFile = (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Vui lòng chọn định dạng file hình ảnh (PNG, JPG, WEBP...)");
+      alert(isVi ? "Vui lòng chọn định dạng file hình ảnh (PNG, JPG, WEBP...)" : "Please select an image file (PNG, JPG, WEBP...)");
       return;
     }
 
@@ -85,7 +88,7 @@ export function ImageUploader({
               type="button"
               onClick={() => onChange("")}
               className="absolute inset-0 bg-black/50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-xs"
-              title="Xóa ảnh"
+              title={isVi ? "Xóa ảnh" : "Remove image"}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -95,7 +98,7 @@ export function ImageUploader({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             className="w-10 h-10 rounded-lg border border-dashed border-slate-300 hover:border-blue-500 bg-slate-50 hover:bg-blue-50/50 flex flex-col items-center justify-center text-slate-400 hover:text-blue-600 transition flex-shrink-0"
-            title="Thêm ảnh từ máy"
+            title={isVi ? "Thêm ảnh từ máy" : "Upload from device"}
           >
             <UploadCloud className="w-4 h-4" />
           </button>
@@ -109,7 +112,7 @@ export function ImageUploader({
         />
         <input
           type="text"
-          value={value.startsWith("data:") ? "[Ảnh đã tải từ máy]" : value}
+          value={value.startsWith("data:") ? (isVi ? "[Ảnh đã tải từ máy]" : "[Device Uploaded Image]") : value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-blue-600 focus:bg-white transition"
@@ -133,7 +136,7 @@ export function ImageUploader({
                 mode === "file" ? "bg-white text-blue-600 shadow-sm font-semibold" : "hover:text-slate-900"
               }`}
             >
-              <UploadCloud className="w-3 h-3" /> Tải từ máy
+              <UploadCloud className="w-3 h-3" /> {isVi ? "Tải từ máy" : "Upload"}
             </button>
             <button
               type="button"
@@ -142,7 +145,7 @@ export function ImageUploader({
                 mode === "url" ? "bg-white text-blue-600 shadow-sm font-semibold" : "hover:text-slate-900"
               }`}
             >
-              <LinkIcon className="w-3 h-3" /> Dán URL
+              <LinkIcon className="w-3 h-3" /> {isVi ? "Dán URL" : "Image URL"}
             </button>
           </div>
         </div>
@@ -151,7 +154,7 @@ export function ImageUploader({
       {isUploading ? (
         <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-6 text-center flex flex-col items-center justify-center gap-2">
           <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          <p className="text-xs font-bold text-blue-900">Đang tải ảnh lên máy chủ Cloudinary CDN...</p>
+          <p className="text-xs font-bold text-blue-900">{isVi ? "Đang tải ảnh lên máy chủ Cloudinary CDN..." : "Uploading image to Cloudinary CDN..."}</p>
         </div>
       ) : value ? (
         <div className="relative rounded-xl border border-slate-200 bg-slate-50 p-3 flex items-center gap-4">
@@ -161,7 +164,7 @@ export function ImageUploader({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold mb-1">
-              <CheckCircle2 className="w-4 h-4" /> Đã tải ảnh lên thành công
+              <CheckCircle2 className="w-4 h-4" /> {isVi ? "Đã tải ảnh lên thành công" : "Image uploaded successfully"}
             </div>
             <p className="text-[11px] text-slate-500 truncate font-mono">
               {value.includes("cloudinary") ? `[Cloudinary CDN] ${value}` : value.startsWith("data:") ? `Data URI (${Math.round(value.length / 1024)} KB)` : value}
@@ -172,7 +175,7 @@ export function ImageUploader({
             onClick={() => onChange("")}
             className="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition text-xs font-semibold flex items-center gap-1"
           >
-            <X className="w-4 h-4" /> Đổi ảnh
+            <X className="w-4 h-4" /> {isVi ? "Đổi ảnh" : "Change"}
           </button>
         </div>
       ) : mode === "file" ? (
@@ -202,9 +205,15 @@ export function ImageUploader({
           </div>
           <div>
             <p className="text-xs font-bold text-slate-800">
-              Kéo thả hoặc <span className="text-blue-600 underline">bấm để chọn ảnh từ máy tính</span>
+              {isVi ? (
+                <>Kéo thả hoặc <span className="text-blue-600 underline">bấm để chọn ảnh từ máy tính</span></>
+              ) : (
+                <>Drag & drop or <span className="text-blue-600 underline">browse files from device</span></>
+              )}
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Tự động nén & lưu lên Cloudinary CDN (PNG, JPG, WEBP)</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {isVi ? "Tự động nén & lưu lên Cloudinary CDN (PNG, JPG, WEBP)" : "Auto-compressed & stored on Cloudinary CDN (PNG, JPG, WEBP)"}
+            </p>
           </div>
         </div>
       ) : (

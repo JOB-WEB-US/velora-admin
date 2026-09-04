@@ -1,6 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
+import { apiClient } from "@/lib/api/client";
+import { useLanguageStore } from "@/store/useLanguageStore";
 import { 
   Ticket, 
   Plus, 
@@ -36,6 +38,8 @@ interface Coupon {
 }
 
 export default function CouponsManagementPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -61,8 +65,7 @@ export default function CouponsManagementPage() {
   const fetchCoupons = async () => {
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:5000/api/v1/coupons?all=true");
-      const data = await res.json();
+      const { data } = await apiClient.get("/coupons/admin/all");
       if (data.success) {
         setCoupons(data.data);
       }
@@ -120,7 +123,7 @@ export default function CouponsManagementPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.code.trim()) {
-      setModalError("Vui lòng nhập mã giảm giá (Code)");
+      setModalError(isVi ? "Vui lòng nhập mã giảm giá (Code)" : "Please enter coupon code");
       return;
     }
 
@@ -140,21 +143,9 @@ export default function CouponsManagementPage() {
         expiresAt: formData.expiresAt ? new Date(formData.expiresAt).toISOString() : null,
       };
 
-      const url = editingCoupon
-        ? `http://localhost:5000/api/v1/coupons/${editingCoupon.id}`
-        : "http://localhost:5000/api/v1/coupons";
+      const url = editingCoupon ? `/coupons/${editingCoupon.id}` : "/coupons";
       const method = editingCoupon ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const resData = await res.json();
-      if (!res.ok) {
-        throw new Error(resData.message || "Không thể lưu mã giảm giá");
-      }
+      await apiClient.request({ url, method, data: payload });
 
       setIsModalOpen(false);
       fetchCoupons();
@@ -167,11 +158,7 @@ export default function CouponsManagementPage() {
 
   const handleToggleActive = async (coupon: Coupon) => {
     try {
-      await fetch(`http://localhost:5000/api/v1/coupons/${coupon.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !coupon.isActive }),
-      });
+      await apiClient.put(`/coupons/${coupon.id}`, { isActive: !coupon.isActive });
       fetchCoupons();
     } catch (err) {
       console.error("Toggle error:", err);
@@ -179,14 +166,12 @@ export default function CouponsManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa mã giảm giá này?")) return;
+    if (!confirm(isVi ? "Bạn có chắc chắn muốn xóa mã giảm giá này?" : "Are you sure you want to delete this coupon?")) return;
     try {
-      await fetch(`http://localhost:5000/api/v1/coupons/${id}`, {
-        method: "DELETE",
-      });
+      await apiClient.delete(`/coupons/${id}`);
       fetchCoupons();
-    } catch (err) {
-      console.error("Delete error:", err);
+    } catch (err: any) {
+      alert(isVi ? "Lỗi khi xóa mã: " + err.message : "Error deleting coupon: " + err.message);
     }
   };
 
@@ -205,10 +190,10 @@ export default function CouponsManagementPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-800 flex items-center gap-2.5">
-            <Ticket className="w-7 h-7 text-blue-600" /> Quản Lý Mã Giảm Giá & Khuyến Mãi (Coupons)
+            <Ticket className="w-7 h-7 text-blue-600" /> {isVi ? "Quản Lý Mã Giảm Giá & Khuyến Mãi (Coupons)" : "Coupons & Discounts Management"}
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Tạo và cấu hình các chương trình ưu đãi, giảm giá % hoặc miễn phí vận chuyển cho khách hàng.
+            {isVi ? "Tạo và cấu hình các chương trình ưu đãi, giảm giá % hoặc miễn phí vận chuyển cho khách hàng." : "Create and configure discounts, percentage off, or free shipping for customers."}
           </p>
         </div>
 
@@ -216,7 +201,7 @@ export default function CouponsManagementPage() {
           onClick={handleOpenCreateModal}
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow-md shadow-blue-500/20 transition cursor-pointer self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4" /> Tạo Mã Giảm Giá Mới
+          <Plus className="w-4 h-4" /> {isVi ? "Tạo Mã Giảm Giá Mới" : "Create New Coupon"}
         </button>
       </div>
 
@@ -227,8 +212,8 @@ export default function CouponsManagementPage() {
             <Ticket className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng số mã</div>
-            <div className="text-2xl font-black text-slate-800">{coupons.length} Mã</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isVi ? "Tổng số mã" : "Total Coupons"}</div>
+            <div className="text-2xl font-black text-slate-800">{coupons.length} {isVi ? "Mã" : "Coupons"}</div>
           </div>
         </div>
 
@@ -237,8 +222,8 @@ export default function CouponsManagementPage() {
             <Sparkles className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Đang hoạt động</div>
-            <div className="text-2xl font-black text-emerald-600">{activeCouponsCount} Mã Active</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isVi ? "Đang hoạt động" : "Active Coupons"}</div>
+            <div className="text-2xl font-black text-emerald-600">{activeCouponsCount} {isVi ? "Mã Active" : "Active"}</div>
           </div>
         </div>
 
@@ -247,8 +232,8 @@ export default function CouponsManagementPage() {
             <TrendingUp className="w-6 h-6" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Lượt áp dụng thành công</div>
-            <div className="text-2xl font-black text-indigo-600">{totalUsages} Lượt dùng</div>
+            <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">{isVi ? "Lượt áp dụng thành công" : "Total Usages"}</div>
+            <div className="text-2xl font-black text-indigo-600">{totalUsages} {isVi ? "Lượt dùng" : "Uses"}</div>
           </div>
         </div>
       </div>
@@ -260,7 +245,7 @@ export default function CouponsManagementPage() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm mã code hoặc mô tả..."
+              placeholder={isVi ? "Tìm kiếm mã code hoặc mô tả..." : "Search coupon code or description..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition"
@@ -273,27 +258,27 @@ export default function CouponsManagementPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[11px] border-b border-slate-200">
               <tr>
-                <th className="py-3 px-5">Mã Coupon</th>
-                <th className="py-3 px-5">Mô tả & Loại giảm giá</th>
-                <th className="py-3 px-5">Giá trị giảm</th>
-                <th className="py-3 px-5">Đơn tối thiểu</th>
-                <th className="py-3 px-5">Lượt dùng</th>
-                <th className="py-3 px-5">Hạn sử dụng</th>
-                <th className="py-3 px-5">Trạng thái</th>
-                <th className="py-3 px-5 text-right">Thao tác</th>
+                <th className="py-3 px-5">{isVi ? "Mã Coupon" : "Coupon Code"}</th>
+                <th className="py-3 px-5">{isVi ? "Mô tả & Loại giảm giá" : "Description & Type"}</th>
+                <th className="py-3 px-5">{isVi ? "Giá trị giảm" : "Discount Value"}</th>
+                <th className="py-3 px-5">{isVi ? "Đơn tối thiểu" : "Min Order"}</th>
+                <th className="py-3 px-5">{isVi ? "Lượt dùng" : "Uses"}</th>
+                <th className="py-3 px-5">{isVi ? "Hạn sử dụng" : "Expires At"}</th>
+                <th className="py-3 px-5">{isVi ? "Trạng thái" : "Status"}</th>
+                <th className="py-3 px-5 text-right">{isVi ? "Thao tác" : "Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
               {loading ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Đang tải danh sách mã giảm giá...
+                    {isVi ? "Đang tải danh sách mã giảm giá..." : "Loading coupons list..."}
                   </td>
                 </tr>
               ) : filteredCoupons.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-400">
-                    Không tìm thấy mã giảm giá nào.
+                    {isVi ? "Không tìm thấy mã giảm giá nào." : "No coupons found."}
                   </td>
                 </tr>
               ) : (
@@ -307,7 +292,7 @@ export default function CouponsManagementPage() {
                         <button
                           onClick={() => handleCopy(coupon.code)}
                           className="p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-                          title="Sao chép mã"
+                          title={isVi ? "Sao chép mã" : "Copy code"}
                         >
                           {copiedCode === coupon.code ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
@@ -321,7 +306,7 @@ export default function CouponsManagementPage() {
                         {coupon.discountType === "fixed" && <DollarSign className="w-3 h-3 text-emerald-500" />}
                         {coupon.discountType === "shipping" && <Truck className="w-3 h-3 text-blue-500" />}
                         <span className="capitalize">{coupon.discountType} discount</span>
-                        {coupon.isPublic && <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-1.5 py-0.2 rounded">Công khai</span>}
+                        {coupon.isPublic && <span className="bg-emerald-50 text-emerald-600 text-[9px] font-black px-1.5 py-0.5 rounded">{isVi ? "Công khai" : "Public"}</span>}
                       </div>
                     </td>
 
@@ -329,12 +314,12 @@ export default function CouponsManagementPage() {
                       <span className="font-extrabold text-slate-900 text-sm">
                         {coupon.discountType === "percentage" && `${coupon.discountValue}%`}
                         {coupon.discountType === "fixed" && `$${coupon.discountValue.toFixed(2)}`}
-                        {coupon.discountType === "shipping" && "Free Shipping"}
+                        {coupon.discountType === "shipping" && (isVi ? "Miễn phí ship" : "Free Shipping")}
                       </span>
                     </td>
 
                     <td className="py-3.5 px-5 text-xs text-slate-600">
-                      {coupon.minOrderAmount > 0 ? `$${coupon.minOrderAmount.toFixed(2)}` : "Không giới hạn"}
+                      {coupon.minOrderAmount > 0 ? `$${coupon.minOrderAmount.toFixed(2)}` : (isVi ? "Không giới hạn" : "No minimum")}
                     </td>
 
                     <td className="py-3.5 px-5 font-bold text-slate-800 text-xs">
@@ -342,7 +327,7 @@ export default function CouponsManagementPage() {
                     </td>
 
                     <td className="py-3.5 px-5 text-xs text-slate-500">
-                      {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString("vi-VN") : "Vĩnh viễn"}
+                      {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString(isVi ? "vi-VN" : "en-US") : (isVi ? "Vĩnh viễn" : "Lifetime")}
                     </td>
 
                     <td className="py-3.5 px-5">
@@ -355,7 +340,7 @@ export default function CouponsManagementPage() {
                         }`}
                       >
                         {coupon.isActive ? <ToggleRight className="w-4 h-4 text-emerald-600" /> : <ToggleLeft className="w-4 h-4 text-slate-400" />}
-                        <span>{coupon.isActive ? "Active" : "Tắt"}</span>
+                        <span>{coupon.isActive ? (isVi ? "Hoạt động" : "Active") : (isVi ? "Tắt" : "Inactive")}</span>
                       </button>
                     </td>
 
@@ -363,14 +348,14 @@ export default function CouponsManagementPage() {
                       <button
                         onClick={() => handleOpenEditModal(coupon)}
                         className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                        title="Chỉnh sửa"
+                        title={isVi ? "Chỉnh sửa" : "Edit"}
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(coupon.id)}
                         className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
-                        title="Xóa mã"
+                        title={isVi ? "Xóa mã" : "Delete"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -391,7 +376,7 @@ export default function CouponsManagementPage() {
             <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
               <h3 className="font-extrabold text-slate-800 text-base flex items-center gap-2">
                 <Ticket className="w-5 h-5 text-blue-600" />
-                {editingCoupon ? "Chỉnh Sửa Mã Giảm Giá" : "Tạo Mã Giảm Giá Mới"}
+                {editingCoupon ? (isVi ? "Chỉnh Sửa Mã Giảm Giá" : "Edit Coupon") : (isVi ? "Tạo Mã Giảm Giá Mới" : "Create New Coupon")}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -413,12 +398,12 @@ export default function CouponsManagementPage() {
               {/* Code */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mã Code Khuyến Mãi <span className="text-red-500">*</span>
+                  {isVi ? "Mã Code Khuyến Mãi" : "Coupon Code"} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ví dụ: BLACKFRIDAY30, VELORA20"
+                  placeholder={isVi ? "Ví dụ: BLACKFRIDAY30, VELORA20" : "E.g. BLACKFRIDAY30, VELORA20"}
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-mono font-black text-blue-600 uppercase outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
@@ -428,11 +413,11 @@ export default function CouponsManagementPage() {
               {/* Description */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mô tả chương trình
+                  {isVi ? "Mô tả chương trình" : "Description"}
                 </label>
                 <input
                   type="text"
-                  placeholder="Ví dụ: Giảm 20% cho đơn hàng đầu tiên"
+                  placeholder={isVi ? "Ví dụ: Giảm 20% cho đơn hàng đầu tiên" : "E.g. 20% off for first order"}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 outline-none focus:border-blue-500"
@@ -443,22 +428,22 @@ export default function CouponsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Loại giảm giá
+                    {isVi ? "Loại giảm giá" : "Discount Type"}
                   </label>
                   <select
                     value={formData.discountType}
                     onChange={(e: any) => setFormData({ ...formData, discountType: e.target.value })}
                     className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
                   >
-                    <option value="percentage">Phần trăm (%)</option>
-                    <option value="fixed">Tiền mặt cố định ($)</option>
-                    <option value="shipping">Miễn phí ship (Free Ship)</option>
+                    <option value="percentage">{isVi ? "Phần trăm (%)" : "Percentage (%)"}</option>
+                    <option value="fixed">{isVi ? "Tiền mặt cố định ($)" : "Fixed Amount ($)"}</option>
+                    <option value="shipping">{isVi ? "Miễn phí ship (Free Ship)" : "Free Shipping"}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Giá trị giảm {formData.discountType === "percentage" ? "(%)" : "($)"}
+                    {isVi ? `Giá trị giảm ${formData.discountType === "percentage" ? "(%)" : "($)"}` : `Discount Value ${formData.discountType === "percentage" ? "(%)" : "($)"}`}
                   </label>
                   <input
                     type="number"
@@ -476,7 +461,7 @@ export default function CouponsManagementPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Đơn tối thiểu ($)
+                    {isVi ? "Đơn tối thiểu ($)" : "Minimum Order ($)"}
                   </label>
                   <input
                     type="number"
@@ -491,7 +476,7 @@ export default function CouponsManagementPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Ngày hết hạn (Tuỳ chọn)
+                    {isVi ? "Ngày hết hạn (Tuỳ chọn)" : "Expiration Date (Optional)"}
                   </label>
                   <input
                     type="date"
@@ -511,7 +496,7 @@ export default function CouponsManagementPage() {
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span>Kích hoạt mã ngay (Active)</span>
+                  <span>{isVi ? "Kích hoạt mã ngay (Active)" : "Activate coupon immediately (Active)"}</span>
                 </label>
 
                 <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
@@ -521,7 +506,7 @@ export default function CouponsManagementPage() {
                     onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span>Hiển thị công khai gợi ý trong Giỏ hàng (Public Coupon)</span>
+                  <span>{isVi ? "Hiển thị công khai gợi ý trong Giỏ hàng (Public Coupon)" : "Show publicly in Cart / Checkout suggestions"}</span>
                 </label>
               </div>
 
@@ -532,14 +517,14 @@ export default function CouponsManagementPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
-                  Hủy
+                  {isVi ? "Hủy" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
                   className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition disabled:opacity-50 cursor-pointer"
                 >
-                  {submitting ? "Đang lưu..." : editingCoupon ? "Cập Nhật" : "Tạo Mã"}
+                  {submitting ? (isVi ? "Đang lưu..." : "Saving...") : editingCoupon ? (isVi ? "Cập Nhật" : "Update Coupon") : (isVi ? "Tạo Mã" : "Create Coupon")}
                 </button>
               </div>
             </form>

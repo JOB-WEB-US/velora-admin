@@ -5,9 +5,12 @@ import { useRouter } from "next/navigation";
 import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { apiClient } from "@/lib/api/client";
+import { useTranslation } from "@/store/useLanguageStore";
+import LanguageSwitcher from "@/components/common/LanguageSwitcher";
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { setAuth, isAuthenticated, isHydrated, checkAuthSession } = useAdminAuthStore();
 
   const [email, setEmail] = useState("");
@@ -16,7 +19,7 @@ export default function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Tự động kiểm tra session và chuyển hướng nếu đã đăng nhập
+  // Check existing session and redirect
   useEffect(() => {
     checkAuthSession().then((isAuthed) => {
       if (isAuthed) {
@@ -31,13 +34,12 @@ export default function AdminLoginPage() {
     setErrorMsg("");
 
     try {
-      // Gọi Backend API xác thực email & mật khẩu đã mã hóa Bcrypt
       const { data } = await apiClient.post("/auth/login", { email, password });
 
       if (data.token && data.user) {
         const userRole = data.user.role;
         if (!["ADMIN", "SUPER_ADMIN", "SHIPPER"].includes(userRole)) {
-          setErrorMsg("Tài khoản của bạn không có quyền truy cập vào cổng quản trị.");
+          setErrorMsg(t("login.roleError"));
           return;
         }
 
@@ -58,10 +60,10 @@ export default function AdminLoginPage() {
           router.push("/");
         }
       } else {
-        setErrorMsg("Đăng nhập thất bại: Không nhận được token xác thực từ máy chủ.");
+        setErrorMsg(t("login.tokenError"));
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || "Email hoặc mật khẩu không chính xác!");
+      setErrorMsg(err.response?.data?.message || t("login.invalidCreds"));
     } finally {
       setLoading(false);
     }
@@ -70,6 +72,11 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 space-y-6 shadow-2xl relative overflow-hidden">
+        {/* Language Switcher in top right */}
+        <div className="absolute top-5 right-5 z-20">
+          <LanguageSwitcher />
+        </div>
+
         {/* Soft background accent */}
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-100 rounded-full blur-3xl" />
 
@@ -78,8 +85,8 @@ export default function AdminLoginPage() {
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 mx-auto flex items-center justify-center text-white font-extrabold text-2xl shadow-lg shadow-blue-500/25">
             V
           </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Velora Portal</h1>
-          <p className="text-xs text-slate-500 font-medium">Cổng Quản Trị Admin & Đơn Vị Vận Chuyển</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t("login.title")}</h1>
+          <p className="text-xs text-slate-500 font-medium">{t("login.subtitle")}</p>
         </div>
 
         {errorMsg && (
@@ -93,14 +100,14 @@ export default function AdminLoginPage() {
           {/* Email Input */}
           <div className="space-y-1">
             <label className="font-bold text-slate-700 flex items-center gap-1.5">
-              <Mail className="w-4 h-4 text-blue-600" /> Email Tài Khoản *
+              <Mail className="w-4 h-4 text-blue-600" /> {t("login.emailLabel")}
             </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Nhập email quản trị..."
+              placeholder={t("login.emailPlaceholder")}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition"
             />
           </div>
@@ -109,7 +116,7 @@ export default function AdminLoginPage() {
           <div className="space-y-1">
             <label className="font-bold text-slate-700 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
-                <Lock className="w-4 h-4 text-blue-600" /> Mật Khẩu *
+                <Lock className="w-4 h-4 text-blue-600" /> {t("login.passwordLabel")}
               </span>
               <button
                 type="button"
@@ -117,7 +124,7 @@ export default function AdminLoginPage() {
                 className="text-[11px] text-blue-600 hover:underline flex items-center gap-1 font-bold"
               >
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                {showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+                {showPassword ? t("login.hidePassword") : t("login.showPassword")}
               </button>
             </label>
             <div className="relative">
@@ -126,7 +133,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Nhập mật khẩu..."
+                placeholder={t("login.passwordPlaceholder")}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold text-sm focus:outline-none focus:border-blue-600 focus:bg-white transition font-mono"
               />
             </div>
@@ -137,13 +144,13 @@ export default function AdminLoginPage() {
             disabled={loading}
             className="w-full py-3 rounded-xl text-white font-extrabold text-sm transition shadow-md flex items-center justify-center gap-2 mt-2 bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"
           >
-            {loading ? "Đang xác thực..." : "Đăng Nhập Quản Trị"} <ArrowRight className="w-4 h-4" />
+            {loading ? t("login.loggingIn") : t("login.loginBtn")} <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
         <div className="text-center text-xs text-slate-500 border-t border-slate-100 pt-4 font-semibold flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          Xác thực bảo mật phân quyền Role-Based (RBAC)
+          {t("login.securityNote")}
         </div>
       </div>
     </div>

@@ -9,13 +9,14 @@ export default function ConsoleSecurityShield() {
       const warningSub = "color: #f59e0b; font-size: 14px; font-weight: 700; line-height: 1.6;";
       const warningText = "color: #3b82f6; font-size: 12px; font-weight: 600;";
 
-      console.log("%c🛑 DỪNG LẠI! CẢNH BÁO BẢO MẬT 🛑", warningTitle);
+      console.log("%c🛑 STOP! SECURITY WARNING / CẢNH BÁO BẢO MẬT 🛑", warningTitle);
       console.log(
-        "%c⚠️ ĐÂY LÀ TÍNH NĂNG DÀNH CHO NHÀ PHÁT TRIỂN HỆ THỐNG VELORA ADMIN.",
+        "%c⚠️ THIS IS A BROWSER FEATURE INTENDED FOR VELORA ADMIN DEVELOPERS ONLY.",
         warningSub
       );
       console.log(
-        "%cTuyệt đối KHÔNG copy/paste bất kỳ đoạn mã JavaScript nào từ người lạ vào cửa sổ Console này!\nNếu bạn làm theo hướng dẫn của ai đó nhập lệnh ở đây, tài khoản và khóa bí mật API Key của bạn có thể bị đánh cắp.",
+        "%cDo NOT paste any code or run scripts here! Pasting unknown code can compromise your account, session tokens, and admin API credentials.\n" +
+        "Tuyệt đối KHÔNG dán bất kỳ mã JavaScript nào vào Console này để bảo vệ tài khoản quản trị.",
         warningText
       );
     }

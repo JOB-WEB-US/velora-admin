@@ -5,6 +5,7 @@ import { Plus, Trash2, Wand2, Palette, Ruler, Tag, Layers, Check } from "lucide-
 import { DraftVariant, ProductVariant } from "@/types/product";
 import { ImageUploader } from "./ImageUploader";
 import { useGetAttributes } from "@/lib/hooks/useAttributes";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 interface VariantManagerProps {
   variants: (DraftVariant | ProductVariant)[];
@@ -19,6 +20,8 @@ export function VariantManager({
   basePrice = 29.99,
   productTitle = "PRODUCT",
 }: VariantManagerProps) {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
   const { data: attrData } = useGetAttributes();
 
   const availableTypes = attrData?.types && attrData.types.length > 0
@@ -55,7 +58,7 @@ export function VariantManager({
 
   const generateMatrix = () => {
     if (selectedTypes.length === 0 && selectedSizes.length === 0 && selectedColors.length === 0) {
-      alert("Vui lòng chọn ít nhất 1 thuộc tính (Loại sản phẩm, Size, hoặc Màu sắc)!");
+      alert(isVi ? "Vui lòng chọn ít nhất 1 thuộc tính (Loại sản phẩm, Size, hoặc Màu sắc)!" : "Please select at least 1 attribute (Product Type, Size, or Color)!");
       return;
     }
 
@@ -135,9 +138,11 @@ export function VariantManager({
       <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
         <div>
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-            <Layers className="w-4 h-4 text-blue-600" /> Danh Sách Biến Thể Hàng Hóa ({variants.length})
+            <Layers className="w-4 h-4 text-blue-600" /> {isVi ? "Danh Sách Biến Thể Hàng Hóa" : "Product Variant Matrix"} ({variants.length})
           </h3>
-          <p className="text-[11px] text-slate-500">Quản lý từ các bảng Master Loại áo, Màu sắc & Kích thước riêng biệt.</p>
+          <p className="text-[11px] text-slate-500">
+            {isVi ? "Quản lý từ các bảng Master Loại áo, Màu sắc & Kích thước riêng biệt." : "Manage variants from Master Product Types, Colors & Sizes."}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -146,14 +151,14 @@ export function VariantManager({
             onClick={() => setShowMatrixModal(true)}
             className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition flex items-center gap-1.5 border border-indigo-200"
           >
-            <Wand2 className="w-3.5 h-3.5" /> Tạo Tự Động Biến Thể (Matrix)
+            <Wand2 className="w-3.5 h-3.5" /> {isVi ? "Tạo Tự Động Biến Thể (Matrix)" : "Auto-Generate Matrix"}
           </button>
           <button
             type="button"
             onClick={handleAddManualRow}
             className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold transition flex items-center gap-1.5 border border-slate-200"
           >
-            <Plus className="w-3.5 h-3.5" /> Thêm Thủ Công
+            <Plus className="w-3.5 h-3.5" /> {isVi ? "Thêm Thủ Công" : "Add Row Manually"}
           </button>
         </div>
       </div>
@@ -163,14 +168,14 @@ export function VariantManager({
         <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200 space-y-4">
           <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
             <h4 className="text-xs font-bold text-blue-900 flex items-center gap-2">
-              <Wand2 className="w-4 h-4 text-blue-600" /> Trình Tạo Tổ Hợp Biến Thể Nhanh (Từ Database Master)
+              <Wand2 className="w-4 h-4 text-blue-600" /> {isVi ? "Trình Tạo Tổ Hợp Biến Thể Nhanh (Từ Database Master)" : "Quick Variant Matrix Generator (From Database Master)"}
             </h4>
             <button
               type="button"
               onClick={() => setShowMatrixModal(false)}
               className="text-xs text-slate-500 hover:text-slate-900 font-bold"
             >
-              Đóng [X]
+              {isVi ? "Đóng [X]" : "Close [X]"}
             </button>
           </div>
 
@@ -178,7 +183,7 @@ export function VariantManager({
             {/* Product Types */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                <Tag className="w-3 h-3 text-blue-600" /> 1. Bảng Loại Sản Phẩm ({availableTypes.length})
+                <Tag className="w-3 h-3 text-blue-600" /> {isVi ? `1. Bảng Loại Sản Phẩm (${availableTypes.length})` : `1. Product Types (${availableTypes.length})`}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {availableTypes.map((t) => {
@@ -204,7 +209,7 @@ export function VariantManager({
             {/* Colors */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                <Palette className="w-3 h-3 text-emerald-600" /> 2. Bảng Màu Sắc Master ({availableColors.length})
+                <Palette className="w-3 h-3 text-emerald-600" /> {isVi ? `2. Bảng Màu Sắc Master (${availableColors.length})` : `2. Master Colors (${availableColors.length})`}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {availableColors.map((c) => {
@@ -234,7 +239,7 @@ export function VariantManager({
             {/* Sizes */}
             <div className="space-y-1.5">
               <label className="text-[11px] font-bold text-slate-700 uppercase flex items-center gap-1">
-                <Ruler className="w-3 h-3 text-purple-600" /> 3. Bảng Kích Thước Size ({availableSizes.length})
+                <Ruler className="w-3 h-3 text-purple-600" /> {isVi ? `3. Bảng Kích Thước Size (${availableSizes.length})` : `3. Size Dimensions (${availableSizes.length})`}
               </label>
               <div className="flex flex-wrap gap-1.5">
                 {availableSizes.map((s) => {
@@ -260,18 +265,18 @@ export function VariantManager({
 
           <div className="flex items-center justify-between pt-2 border-t border-blue-200/60">
             <span className="text-xs text-blue-900 font-semibold">
-              Dự kiến sinh ra:{" "}
+              {isVi ? "Dự kiến sinh ra: " : "Estimated combinations: "}
               <strong className="text-blue-700 font-bold">
                 {(selectedTypes.length || 1) * (selectedColors.length || 1) * (selectedSizes.length || 1)}
               </strong>{" "}
-              biến thể
+              {isVi ? "biến thể" : "variants"}
             </span>
             <button
               type="button"
               onClick={generateMatrix}
               className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition flex items-center gap-1 shadow-sm"
             >
-              <Check className="w-3.5 h-3.5" /> Tạo Biến Thể Ngay
+              <Check className="w-3.5 h-3.5" /> {isVi ? "Tạo Biến Thể Ngay" : "Generate Variants Now"}
             </button>
           </div>
         </div>
@@ -280,9 +285,11 @@ export function VariantManager({
       {/* Variant Table */}
       {variants.length === 0 ? (
         <div className="p-8 rounded-xl border border-dashed border-slate-200 text-center space-y-2">
-          <p className="text-xs font-semibold text-slate-500">Chưa có biến thể nào được tạo.</p>
+          <p className="text-xs font-semibold text-slate-500">{isVi ? "Chưa có biến thể nào được tạo." : "No variants created yet."}</p>
           <p className="text-[11px] text-slate-400">
-            Bấm &quot;Tạo Tự Động Biến Thể&quot; để sinh nhanh các cỡ áo, màu sắc hoặc thêm thủ công.
+            {isVi
+              ? 'Bấm "Tạo Tự Động Biến Thể" để sinh nhanh các cỡ áo, màu sắc hoặc thêm thủ công.'
+              : 'Click "Auto-Generate Matrix" to quickly generate sizes and colors or add rows manually.'}
           </p>
         </div>
       ) : (
@@ -290,15 +297,15 @@ export function VariantManager({
           <table className="w-full text-left text-xs text-slate-700">
             <thead className="bg-slate-100/70 border-b border-slate-200 uppercase text-[10px] font-bold text-slate-500">
               <tr>
-                <th className="p-2.5">STT</th>
-                <th className="p-2.5 min-w-[140px]">Mã SKU</th>
-                <th className="p-2.5">Loại Áo</th>
+                <th className="p-2.5">#</th>
+                <th className="p-2.5 min-w-[140px]">{isVi ? "Mã SKU" : "SKU"}</th>
+                <th className="p-2.5">{isVi ? "Loại Áo" : "Type"}</th>
                 <th className="p-2.5">Size</th>
-                <th className="p-2.5">Màu Sắc</th>
-                <th className="p-2.5 w-24">Giá ($)</th>
-                <th className="p-2.5 w-20">Tồn Kho</th>
-                <th className="p-2.5 min-w-[200px]">Ảnh Biến Thể</th>
-                <th className="p-2.5 text-center">Xóa</th>
+                <th className="p-2.5">{isVi ? "Màu Sắc" : "Color"}</th>
+                <th className="p-2.5 w-24">{isVi ? "Giá ($)" : "Price ($)"}</th>
+                <th className="p-2.5 w-20">{isVi ? "Tồn Kho" : "Stock"}</th>
+                <th className="p-2.5 min-w-[200px]">{isVi ? "Ảnh Biến Thể" : "Variant Image"}</th>
+                <th className="p-2.5 text-center">{isVi ? "Xóa" : "Delete"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 bg-white">
@@ -381,7 +388,7 @@ export function VariantManager({
                       compact
                       value={v.imageUrl || ""}
                       onChange={(url) => handleRowChange(idx, "imageUrl", url)}
-                      placeholder="Link/Tải ảnh"
+                      placeholder={isVi ? "Link/Tải ảnh" : "Image URL/Upload"}
                     />
                   </td>
 
@@ -390,7 +397,7 @@ export function VariantManager({
                       type="button"
                       onClick={() => handleDeleteRow(idx)}
                       className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                      title="Xóa biến thể"
+                      title={isVi ? "Xóa biến thể" : "Delete variant"}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

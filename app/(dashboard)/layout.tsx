@@ -6,6 +6,7 @@ import Sidebar from "@/components/common/Sidebar";
 import Header from "@/components/common/Header";
 import { useUIStore } from "@/store/useUIStore";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
+import { useLanguageStore } from "@/store/useLanguageStore";
 import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
@@ -16,6 +17,7 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { isSidebarOpen } = useUIStore();
+  const { language } = useLanguageStore();
   const { user, isAuthenticated, isHydrated, checkAuthSession } = useAdminAuthStore();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -50,7 +52,9 @@ export default function DashboardLayout({
           <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white font-extrabold text-2xl flex items-center justify-center mx-auto animate-bounce shadow-lg shadow-blue-500/30">
             V
           </div>
-          <p className="text-sm font-extrabold text-slate-700">Đang khôi phục phiên làm việc...</p>
+          <p className="text-sm font-extrabold text-slate-700">
+            {language === "vi" ? "Đang khôi phục phiên làm việc..." : "Restoring session..."}
+          </p>
         </div>
       </div>
     );

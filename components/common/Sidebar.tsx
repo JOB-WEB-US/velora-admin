@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,32 +21,52 @@ import {
   Layers,
   Image as ImageIcon,
   Megaphone,
+  MessageSquare,
 } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
 import { useAdminAuthStore } from "@/store/useAdminAuthStore";
 import { cn } from "@/lib/utils";
+import { apiClient } from "@/lib/api/client";
+import { io } from "socket.io-client";
+import { useTranslation } from "@/store/useLanguageStore";
 
-const NAV_ITEMS = [
-  { name: "Tổng quan Dashboard", href: "/", icon: LayoutDashboard, adminOnly: true },
-  { name: "Quản lý Hàng hóa", href: "/products", icon: Package, adminOnly: true },
-  { name: "Danh mục & Menu Trend", href: "/categories", icon: FolderTree, adminOnly: true },
-  { name: "Thuộc tính & Biến thể", href: "/attributes", icon: SlidersHorizontal, adminOnly: true },
-  { name: "Mã Giảm Giá (Coupons)", href: "/coupons", icon: Ticket, adminOnly: true },
-  { name: "Ưu Đãi Bundle & Save", href: "/bundles", icon: Layers, adminOnly: true },
-  { name: "Quản Lý Banners", href: "/banners", icon: ImageIcon, adminOnly: true },
-  { name: "Chữ Chạy Header", href: "/announcements", icon: Megaphone, adminOnly: true },
-  { name: "Quản lý Đơn hàng", href: "/orders", icon: ShoppingBag, shipperAllowed: true },
-  { name: "Khách hàng", href: "/customers", icon: Users, adminOnly: true },
-  { name: "Admin API Keys", href: "/api-keys", icon: Key, superAdminOnly: true },
-  { name: "Cài đặt Hệ thống", href: "/settings", icon: Settings, adminOnly: true },
+const NAV_DEFINITIONS = [
+  { id: "dashboard", href: "/", icon: LayoutDashboard, adminOnly: true },
+  { id: "products", href: "/products", icon: Package, adminOnly: true },
+  { id: "categories", href: "/categories", icon: FolderTree, adminOnly: true },
+  { id: "attributes", href: "/attributes", icon: SlidersHorizontal, adminOnly: true },
+  { id: "coupons", href: "/coupons", icon: Ticket, adminOnly: true },
+  { id: "bundles", href: "/bundles", icon: Layers, adminOnly: true },
+  { id: "banners", href: "/banners", icon: ImageIcon, adminOnly: true },
+  { id: "announcements", href: "/announcements", icon: Megaphone, adminOnly: true },
+  { id: "orders", href: "/orders", icon: ShoppingBag, shipperAllowed: true },
+  { id: "customers", href: "/customers", icon: Users, adminOnly: true },
+  { id: "messages", href: "/messages", icon: MessageSquare, adminOnly: true },
+  { id: "apiKeys", href: "/api-keys", icon: Key, superAdminOnly: true },
+  { id: "settings", href: "/settings", icon: Settings, adminOnly: true },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const { isSidebarOpen, toggleSidebar } = useUIStore();
-  const { user, logout } = useAdminAuthStore();
+  const { user, token, logout } = useAdminAuthStore();
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const isShipper = user?.role === "SHIPPER";
+
+  useEffect(() => {
+    if (!user || isShipper) return;
+    const refreshUnread = () => apiClient.get("/admin/conversations")
+      .then(({ data }) => setUnreadMessages((data.data || []).reduce((sum: number, item: any) => sum + (item.adminUnreadCount || 0), 0)))
+      .catch(() => {});
+    refreshUnread();
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+    const socket = io(apiUrl.replace(/\/api\/v1\/?$/, ""), { withCredentials: true, auth: { token, scope: "admin" }, transports: ["websocket", "polling"] });
+    socket.on("conversation:updated", refreshUnread);
+    socket.on("message:read", refreshUnread);
+    return () => { socket.disconnect(); };
+  }, [user, token, isShipper]);
 
   return (
     <motion.aside
@@ -59,7 +79,7 @@ export default function Sidebar() {
       <button
         onClick={toggleSidebar}
         className="absolute -right-3.5 top-6 z-50 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 shadow-md flex items-center justify-center transition-all hover:scale-110 focus:outline-none"
-        title={isSidebarOpen ? "Thu gọn Sidebar" : "Mở rộng Sidebar"}
+        title={isSidebarOpen ? t("nav.collapseSidebar") : t("nav.expandSidebar")}
       >
         <motion.div
           animate={{ rotate: isSidebarOpen ? 0 : 180 }}
@@ -91,7 +111,7 @@ export default function Sidebar() {
                     Velora
                   </span>
                   <span className="text-[11px] text-blue-600 font-bold uppercase tracking-wider mt-1">
-                    {isShipper ? "Shipper Fulfillment" : "POD Admin Portal"}
+                    {isShipper ? t("nav.shipperPortal") : t("nav.adminPortal")}
                   </span>
                 </motion.div>
               )}
@@ -101,13 +121,14 @@ export default function Sidebar() {
 
         {/* Navigation Links */}
         <nav className="p-3 space-y-1.5 mt-2">
-          {NAV_ITEMS.map((item) => {
+          {NAV_DEFINITIONS.map((item) => {
             // Shipper can ONLY see /orders
             if (isShipper && !item.shipperAllowed) return null;
             if (item.superAdminOnly && user?.role !== "SUPER_ADMIN") return null;
 
             const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             const Icon = item.icon;
+            const itemName = t(`nav.${item.id}`);
 
             return (
               <Link
@@ -137,15 +158,21 @@ export default function Sidebar() {
                       transition={{ duration: 0.2 }}
                       className="truncate whitespace-nowrap font-bold"
                     >
-                      {item.name}
+                      {itemName}
                     </motion.span>
                   )}
                 </AnimatePresence>
 
+                {item.href === "/messages" && unreadMessages > 0 && (
+                  <span className={`bg-rose-500 text-white text-[10px] font-extrabold min-w-5 h-5 px-1 rounded-full flex items-center justify-center ${isSidebarOpen ? "ml-auto" : "absolute -top-1 -right-1"}`}>
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
+
                 {/* Collapsed State Hover Tooltip */}
                 {!isSidebarOpen && (
                   <div className="absolute left-full ml-3 px-3 py-1.5 bg-slate-900 text-white text-xs rounded-lg shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 z-50 font-bold">
-                    {item.name}
+                    {itemName}
                   </div>
                 )}
               </Link>
@@ -184,7 +211,7 @@ export default function Sidebar() {
               <button
                 onClick={logout}
                 className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition shrink-0"
-                title="Đăng xuất"
+                title={t("nav.logout")}
               >
                 <LogOut className="w-4 h-4" />
               </button>
@@ -193,7 +220,7 @@ export default function Sidebar() {
             <button
               onClick={logout}
               className="w-full p-3 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition flex items-center justify-center"
-              title="Đăng xuất"
+              title={t("nav.logout")}
             >
               <LogOut className="w-5 h-5" />
             </button>

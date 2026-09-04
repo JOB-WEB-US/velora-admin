@@ -7,6 +7,7 @@ export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
+    "X-Auth-Scope": "admin",
   },
   withCredentials: true, // Gửi kèm HttpOnly Cookies qua cross-origin request
 });

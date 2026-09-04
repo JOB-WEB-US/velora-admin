@@ -15,22 +15,27 @@ import {
 import { TrendingUp, BarChart3, LineChart, Sparkles } from "lucide-react";
 import { useGetOrders } from "@/lib/hooks/useOrders";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslation } from "@/store/useLanguageStore";
 
 type TimeframeMode = "week" | "month" | "year";
 type ChartType = "area" | "bar";
 
 export default function RevenueChart() {
+  const { language } = useTranslation();
+  const isVi = language === "vi";
   const { data: orders = [] } = useGetOrders();
   const [mode, setMode] = useState<TimeframeMode>("week");
   const [chartType, setChartType] = useState<ChartType>("area");
 
-  // Compute Weekly Data (Thứ 2 ➔ Chủ Nhật) dynamically from real orders
-  const weekDays = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"];
+  // Compute Weekly Data dynamically from real orders
+  const weekDays = isVi
+    ? ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật"]
+    : ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const weeklyMap: Record<string, { revenue: number; orders: number }> = {};
   weekDays.forEach((day) => (weeklyMap[day] = { revenue: 0, orders: 0 }));
 
-  // Compute Monthly Data (Tháng 1 ➔ Tháng 12) dynamically from real orders
-  const months = Array.from({ length: 12 }, (_, i) => `Tháng ${i + 1}`);
+  // Compute Monthly Data dynamically from real orders
+  const months = Array.from({ length: 12 }, (_, i) => (isVi ? `Tháng ${i + 1}` : `M${i + 1}`));
   const monthlyMap: Record<string, { revenue: number; orders: number }> = {};
   months.forEach((m) => (monthlyMap[m] = { revenue: 0, orders: 0 }));
 
@@ -51,8 +56,8 @@ export default function RevenueChart() {
     }
 
     // Month (0 ➔ 11)
-    const monthLabel = `Tháng ${d.getMonth() + 1}`;
-    if (monthlyMap[monthLabel]) {
+    const monthLabel = months[d.getMonth()];
+    if (monthLabel && monthlyMap[monthLabel]) {
       monthlyMap[monthLabel].revenue += o.totalPrice || 0;
       monthlyMap[monthLabel].orders += 1;
     }
@@ -102,10 +107,10 @@ export default function RevenueChart() {
         <div>
           <h3 className="text-lg font-extrabold text-slate-900 flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-blue-600" />
-            Biểu Đồ Doanh Thu & Đơn Hàng Realtime
+            {isVi ? "Biểu Đồ Doanh Thu & Đơn Hàng Realtime" : "Realtime Revenue & Orders Trend"}
           </h3>
           <p className="text-xs text-slate-500 mt-0.5 font-medium">
-            Tự động tổng hợp số liệu thực tế từ toàn bộ đơn hàng trong Database.
+            {isVi ? "Tự động tổng hợp số liệu thực tế từ toàn bộ đơn hàng trong Database." : "Aggregated from real database transactions and order fulfillment."}
           </p>
         </div>
 
@@ -117,7 +122,7 @@ export default function RevenueChart() {
               className={`p-1.5 rounded-lg transition ${
                 chartType === "area" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
               }`}
-              title="Dạng đường vùng gradient"
+              title={isVi ? "Dạng đường vùng gradient" : "Area gradient chart"}
             >
               <LineChart size={15} />
             </button>
@@ -126,7 +131,7 @@ export default function RevenueChart() {
               className={`p-1.5 rounded-lg transition ${
                 chartType === "bar" ? "bg-white text-blue-600 shadow-xs" : "text-slate-500 hover:text-slate-800"
               }`}
-              title="Dạng cột so sánh"
+              title={isVi ? "Dạng cột so sánh" : "Bar comparison chart"}
             >
               <BarChart3 size={15} />
             </button>
@@ -142,7 +147,7 @@ export default function RevenueChart() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Theo Tuần
+              {isVi ? "Theo Tuần" : "Weekly"}
             </button>
             <button
               onClick={() => setMode("month")}
@@ -152,7 +157,7 @@ export default function RevenueChart() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Theo Tháng
+              {isVi ? "Theo Tháng" : "Monthly"}
             </button>
             <button
               onClick={() => setMode("year")}
@@ -162,7 +167,7 @@ export default function RevenueChart() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Theo Năm
+              {isVi ? "Theo Năm" : "Yearly"}
             </button>
           </div>
         </div>
@@ -171,26 +176,26 @@ export default function RevenueChart() {
       {/* Range Stats Summary Row & Legend */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs border-b border-slate-100 pb-3">
         <div className="space-y-0.5">
-          <span className="text-slate-400 font-bold block">Tổng Doanh Thu:</span>
+          <span className="text-slate-400 font-bold block">{isVi ? "Tổng Doanh Thu:" : "Total Revenue:"}</span>
           <span className="text-lg font-extrabold text-emerald-600 font-mono">{formatCurrency(totalRevenueInRange)}</span>
         </div>
 
         <div className="space-y-0.5 border-l border-slate-100 pl-4">
-          <span className="text-slate-400 font-bold block">Tổng Đơn Hàng:</span>
-          <span className="text-lg font-extrabold text-blue-600 font-mono">{totalOrdersInRange} đơn</span>
+          <span className="text-slate-400 font-bold block">{isVi ? "Tổng Đơn Hàng:" : "Total Orders:"}</span>
+          <span className="text-lg font-extrabold text-blue-600 font-mono">{totalOrdersInRange} {isVi ? "đơn" : "orders"}</span>
         </div>
 
         <div className="space-y-0.5 border-l border-slate-100 pl-4">
-          <span className="text-slate-400 font-bold block">Giá Trị Đơn TB (AOV):</span>
+          <span className="text-slate-400 font-bold block">{isVi ? "Giá Trị Đơn TB (AOV):" : "Average Order Value:"}</span>
           <span className="text-lg font-extrabold text-purple-600 font-mono">{formatCurrency(avgOrderValue)}</span>
         </div>
 
         <div className="space-y-0.5 border-l border-slate-100 pl-4">
           <span className="text-slate-400 font-bold block flex items-center gap-1">
-            <Sparkles size={11} className="text-amber-500" /> Cao Điểm Nhất:
+            <Sparkles size={11} className="text-amber-500" /> {isVi ? "Cao Điểm Nhất:" : "Peak Period:"}
           </span>
           <span className="text-sm font-extrabold text-slate-800 truncate block">
-            {peakItem && peakItem.revenue > 0 ? `${peakItem.label} (${formatCurrency(peakItem.revenue)})` : "Chưa có"}
+            {peakItem && peakItem.revenue > 0 ? `${peakItem.label} (${formatCurrency(peakItem.revenue)})` : (isVi ? "Chưa có" : "N/A")}
           </span>
         </div>
       </div>
@@ -227,12 +232,12 @@ export default function RevenueChart() {
                       <div className="p-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white border border-slate-800 shadow-2xl text-xs space-y-1.5">
                         <p className="font-extrabold text-white text-sm border-b border-slate-700 pb-1">{label}</p>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-blue-400 font-medium">💰 Doanh thu:</span>
+                          <span className="text-blue-400 font-medium">{isVi ? "💰 Doanh thu:" : "💰 Revenue:"}</span>
                           <span className="font-extrabold font-mono text-emerald-400">{formatCurrency(payload[0].value as number)}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-emerald-400 font-medium">📦 Đơn hàng:</span>
-                          <span className="font-extrabold font-mono text-white">{payload[1]?.value} đơn</span>
+                          <span className="text-emerald-400 font-medium">{isVi ? "📦 Đơn hàng:" : "📦 Orders:"}</span>
+                          <span className="font-extrabold font-mono text-white">{payload[1]?.value} {isVi ? "đơn" : "orders"}</span>
                         </div>
                       </div>
                     );
@@ -243,7 +248,7 @@ export default function RevenueChart() {
               <Area
                 type="monotone"
                 dataKey="revenue"
-                name="Doanh thu ($)"
+                name={isVi ? "Doanh thu ($)" : "Revenue ($)"}
                 stroke="#2563eb"
                 strokeWidth={3}
                 fillOpacity={1}
@@ -252,7 +257,7 @@ export default function RevenueChart() {
               <Area
                 type="monotone"
                 dataKey="orders"
-                name="Số đơn"
+                name={isVi ? "Số đơn" : "Orders"}
                 stroke="#059669"
                 strokeWidth={2.5}
                 fillOpacity={1}
@@ -278,12 +283,12 @@ export default function RevenueChart() {
                       <div className="p-3.5 rounded-2xl bg-slate-900/95 backdrop-blur-md text-white border border-slate-800 shadow-2xl text-xs space-y-1.5">
                         <p className="font-extrabold text-white text-sm border-b border-slate-700 pb-1">{label}</p>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-blue-400 font-medium">💰 Doanh thu:</span>
+                          <span className="text-blue-400 font-medium">{isVi ? "💰 Doanh thu:" : "💰 Revenue:"}</span>
                           <span className="font-extrabold font-mono text-emerald-400">{formatCurrency(payload[0]?.value as number)}</span>
                         </div>
                         <div className="flex items-center justify-between gap-4">
-                          <span className="text-emerald-400 font-medium">📦 Đơn hàng:</span>
-                          <span className="font-extrabold font-mono text-white">{payload[1]?.value} đơn</span>
+                          <span className="text-emerald-400 font-medium">{isVi ? "📦 Đơn hàng:" : "📦 Orders:"}</span>
+                          <span className="font-extrabold font-mono text-white">{payload[1]?.value} {isVi ? "đơn" : "orders"}</span>
                         </div>
                       </div>
                     );
@@ -291,8 +296,8 @@ export default function RevenueChart() {
                   return null;
                 }}
               />
-              <Bar dataKey="revenue" name="Doanh thu ($)" fill="#2563eb" radius={[6, 6, 0, 0]} />
-              <Bar dataKey="orders" name="Số đơn" fill="#10b981" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="revenue" name={isVi ? "Doanh thu ($)" : "Revenue ($)"} fill="#2563eb" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="orders" name={isVi ? "Số đơn" : "Orders"} fill="#10b981" radius={[6, 6, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>
@@ -302,11 +307,11 @@ export default function RevenueChart() {
       <div className="flex items-center justify-center gap-6 pt-1 text-xs font-bold text-slate-600">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-blue-600 inline-block shadow-xs" />
-          <span>Doanh Thu ($ USD)</span>
+          <span>{isVi ? "Doanh Thu ($ USD)" : "Revenue ($ USD)"}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-xs" />
-          <span>Số Lượng Đơn Hàng</span>
+          <span>{isVi ? "Số Lượng Đơn Hàng" : "Order Volume"}</span>
         </div>
       </div>
     </div>

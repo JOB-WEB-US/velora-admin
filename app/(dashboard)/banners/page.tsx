@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
@@ -20,6 +20,7 @@ import {
   Sparkle
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 interface Banner {
   id: string;
@@ -66,6 +67,8 @@ const PRESET_TEMPLATES = [
 ];
 
 export default function BannersPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -92,7 +95,7 @@ export default function BannersPage() {
         setBanners(res.data.data);
       }
     } catch (err: any) {
-      console.error("Lỗi khi tải danh sách banners:", err);
+      console.error("Failed to fetch banners:", err);
     } finally {
       setLoading(false);
     }
@@ -144,7 +147,7 @@ export default function BannersPage() {
   const handleSaveBanner = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.imageUrl) {
-      alert("Vui lòng điền Tiêu đề và Link ảnh banner!");
+      alert(isVi ? "Vui lòng điền Tiêu đề và Link ảnh banner!" : "Please provide a Title and Banner Image URL!");
       return;
     }
 
@@ -152,15 +155,15 @@ export default function BannersPage() {
     try {
       if (editingBanner) {
         await apiClient.put(`/banners/${editingBanner.id}`, formData);
-        alert("✅ Cập nhật banner thành công!");
+        alert(isVi ? "✅ Cập nhật banner thành công!" : "✅ Banner updated successfully!");
       } else {
         await apiClient.post("/banners", formData);
-        alert("✅ Tạo banner mới thành công!");
+        alert(isVi ? "✅ Tạo banner mới thành công!" : "✅ New banner created successfully!");
       }
       setIsModalOpen(false);
       fetchBanners();
     } catch (err: any) {
-      alert(err.message || "Lỗi khi lưu banner!");
+      alert(err.message || (isVi ? "Lỗi khi lưu banner!" : "Error saving banner!"));
     } finally {
       setSaving(false);
     }
@@ -173,19 +176,19 @@ export default function BannersPage() {
         prev.map((b) => (b.id === banner.id ? { ...b, isActive: !b.isActive } : b))
       );
     } catch (err: any) {
-      alert(err.message || "Lỗi cập nhật trạng thái!");
+      alert(err.message || (isVi ? "Lỗi cập nhật trạng thái!" : "Error updating status!"));
     }
   };
 
   const handleDeleteBanner = async (banner: Banner) => {
-    if (!confirm(`Bạn có chắc muốn xóa banner "${banner.title}"?`)) return;
+    if (!confirm(isVi ? `Bạn có chắc muốn xóa banner "${banner.title}"?` : `Are you sure you want to delete banner "${banner.title}"?`)) return;
 
     try {
       await apiClient.delete(`/banners/${banner.id}`);
       setBanners((prev) => prev.filter((b) => b.id !== banner.id));
-      alert("✅ Đã xóa banner thành công!");
+      alert(isVi ? "✅ Đã xóa banner thành công!" : "✅ Banner deleted successfully!");
     } catch (err: any) {
-      alert(err.message || "Lỗi khi xóa banner!");
+      alert(err.message || (isVi ? "Lỗi khi xóa banner!" : "Error deleting banner!"));
     }
   };
 
@@ -198,10 +201,12 @@ export default function BannersPage() {
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2.5">
             <ImageIcon className="w-7 h-7 text-[#ff7700]" />
-            Quản Lý Banner Trang Chủ (Hero Slider)
+            {isVi ? "Quản Lý Banner Trang Chủ (Hero Slider)" : "Home Banner Management (Hero Slider)"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Tùy biến các slide ảnh lớn, khẩu hiệu khuyến mãi và nút bấm điều hướng xuất hiện ở đầu trang chủ shop.
+            {isVi 
+              ? "Tùy biến các slide ảnh lớn, khẩu hiệu khuyến mãi và nút bấm điều hướng xuất hiện ở đầu trang chủ shop."
+              : "Customize large hero image slides, promotional taglines, and call-to-action buttons on the storefront."}
           </p>
         </div>
 
@@ -209,7 +214,7 @@ export default function BannersPage() {
           <button
             onClick={fetchBanners}
             className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-            title="Làm mới dữ liệu"
+            title={isVi ? "Làm mới dữ liệu" : "Refresh data"}
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
@@ -218,7 +223,7 @@ export default function BannersPage() {
             onClick={openCreateModal}
             className="px-5 py-2.5 rounded-xl bg-[#ff7700] hover:bg-[#e06800] text-black font-extrabold text-xs shadow-md shadow-orange-500/20 transition flex items-center gap-2 cursor-pointer"
           >
-            <Plus size={16} /> Thêm Banner Mới
+            <Plus size={16} /> {isVi ? "Thêm Banner Mới" : "Add New Banner"}
           </button>
         </div>
       </div>
@@ -227,7 +232,7 @@ export default function BannersPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Tổng Số Banners</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{isVi ? "Tổng Số Banners" : "Total Banners"}</span>
             <span className="text-2xl font-black text-slate-900 mt-1 block">{banners.length}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
@@ -237,8 +242,8 @@ export default function BannersPage() {
 
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Đang Hiển Thị Ngoài Shop</span>
-            <span className="text-2xl font-black text-emerald-600 mt-1 block">{activeCount} slide</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{isVi ? "Đang Hiển Thị Ngoài Shop" : "Active On Storefront"}</span>
+            <span className="text-2xl font-black text-emerald-600 mt-1 block">{activeCount} {isVi ? "slide" : "slides"}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
             <CheckCircle2 size={20} />
@@ -247,8 +252,8 @@ export default function BannersPage() {
 
         <div className="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
           <div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">Thời Gian Chuyển Slide</span>
-            <span className="text-2xl font-black text-orange-600 mt-1 block">6 Giây</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block">{isVi ? "Thời Gian Chuyển Slide" : "Slide Interval"}</span>
+            <span className="text-2xl font-black text-orange-600 mt-1 block">{isVi ? "6 Giây" : "6 Seconds"}</span>
           </div>
           <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#ff7700] flex items-center justify-center font-bold">
             <Sparkle size={20} />
@@ -260,26 +265,26 @@ export default function BannersPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">
-            Danh Sách Slide Banners ({banners.length})
+            {isVi ? `Danh Sách Slide Banners (${banners.length})` : `Banner Slides List (${banners.length})`}
           </h2>
           <span className="text-xs text-slate-500 font-medium">
-            (Thứ tự từ nhỏ đến lớn sẽ chạy lần lượt trên web)
+            {isVi ? "(Thứ tự từ nhỏ đến lớn sẽ chạy lần lượt trên web)" : "(Lower order numbers appear first in the carousel)"}
           </span>
         </div>
 
         {loading ? (
           <div className="p-12 bg-white rounded-2xl border border-slate-200 text-center text-slate-400 text-xs font-medium animate-pulse">
-            Đang tải dữ liệu banners...
+            {isVi ? "Đang tải dữ liệu banners..." : "Loading banner slides..."}
           </div>
         ) : banners.length === 0 ? (
           <div className="p-12 bg-white rounded-2xl border border-slate-200 text-center space-y-3">
             <ImageIcon className="w-12 h-12 text-slate-300 mx-auto" />
-            <p className="text-sm font-bold text-slate-700">Chưa có banner nào được tạo</p>
+            <p className="text-sm font-bold text-slate-700">{isVi ? "Chưa có banner nào được tạo" : "No banners created yet"}</p>
             <button
               onClick={openCreateModal}
               className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold shadow hover:bg-blue-700"
             >
-              + Tạo Slide Đầu Tiên
+              {isVi ? "+ Tạo Slide Đầu Tiên" : "+ Create First Slide"}
             </button>
           </div>
         ) : (
@@ -302,7 +307,7 @@ export default function BannersPage() {
                     {/* Top Badges */}
                     <div className="flex items-center justify-between">
                       <span className="px-2.5 py-1 bg-black/70 backdrop-blur text-white text-[10px] font-black rounded-lg border border-white/20">
-                        Thứ Tự: #{b.order}
+                        {isVi ? `Thứ Tự: #${b.order}` : `Order: #${b.order}`}
                       </span>
                       <span
                         className={`px-2.5 py-0.8 rounded-full text-[10px] font-extrabold flex items-center gap-1 ${
@@ -311,7 +316,7 @@ export default function BannersPage() {
                             : "bg-slate-700 text-slate-300"
                         }`}
                       >
-                        {b.isActive ? "● Đang Bật" : "○ Tạm Ẩn"}
+                        {b.isActive ? (isVi ? "● Đang Bật" : "● Active") : (isVi ? "○ Tạm Ẩn" : "○ Inactive")}
                       </span>
                     </div>
 
@@ -348,7 +353,7 @@ export default function BannersPage() {
                           : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                       }`}
                     >
-                      {b.isActive ? "Tạm Ẩn Slide" : "Kích Hoạt Slide"}
+                      {b.isActive ? (isVi ? "Tạm Ẩn Slide" : "Deactivate") : (isVi ? "Kích Hoạt Slide" : "Activate")}
                     </button>
                   </div>
 
@@ -356,14 +361,14 @@ export default function BannersPage() {
                     <button
                       onClick={() => openEditModal(b)}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 transition cursor-pointer"
-                      title="Chỉnh sửa banner"
+                      title={isVi ? "Chỉnh sửa banner" : "Edit banner"}
                     >
                       <Edit3 size={15} />
                     </button>
                     <button
                       onClick={() => handleDeleteBanner(b)}
                       className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition cursor-pointer"
-                      title="Xóa banner"
+                      title={isVi ? "Xóa banner" : "Delete banner"}
                     >
                       <Trash2 size={15} />
                     </button>
@@ -382,10 +387,10 @@ export default function BannersPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900">
-                  {editingBanner ? "Chỉnh Sửa Banner Slide" : "Tạo Banner Slide Mới"}
+                  {editingBanner ? (isVi ? "Chỉnh Sửa Banner Slide" : "Edit Banner Slide") : (isVi ? "Tạo Banner Slide Mới" : "Create New Banner Slide")}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Điền các thông tin để banner hiển thị đẹp và chuẩn tỉ lệ trên Storefront.
+                  {isVi ? "Điền các thông tin để banner hiển thị đẹp và chuẩn tỉ lệ trên Storefront." : "Provide slide details for proper rendering and aspect ratio on the storefront."}
                 </p>
               </div>
               <button
@@ -400,7 +405,7 @@ export default function BannersPage() {
             {!editingBanner && (
               <div className="mb-6 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl">
                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block mb-2">
-                  ✨ Chọn Nhanh Mẫu Banner Mùa Lễ Hội:
+                  {isVi ? "✨ Chọn Nhanh Mẫu Banner Mùa Lễ Hội:" : "✨ Quick Preset Holiday Templates:"}
                 </span>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {PRESET_TEMPLATES.map((tpl, i) => (
@@ -421,12 +426,12 @@ export default function BannersPage() {
               {/* Title */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                  Tiêu Đề Chính (Headline) *
+                  {isVi ? "Tiêu Đề Chính (Headline) *" : "Headline Title *"}
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. HALLOWEEN COLLECTION 2026"
+                  placeholder={isVi ? "Ví dụ: HALLOWEEN COLLECTION 2026" : "e.g. HALLOWEEN COLLECTION 2026"}
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold outline-none focus:border-[#ff7700] focus:bg-white"
@@ -436,11 +441,11 @@ export default function BannersPage() {
               {/* Subtitle */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                  Phụ Đề / Khẩu Hiệu (Subtitle)
+                  {isVi ? "Phụ Đề / Khẩu Hiệu (Subtitle)" : "Subtitle / Tagline"}
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Spooky & Horror Graphic Apparel Made For Halloween Night"
+                  placeholder={isVi ? "Ví dụ: Spooky & Horror Graphic Apparel Made For Halloween Night" : "e.g. Spooky & Horror Graphic Apparel Made For Halloween Night"}
                   value={formData.subtitle}
                   onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium outline-none focus:border-[#ff7700] focus:bg-white"
@@ -450,12 +455,12 @@ export default function BannersPage() {
               {/* Image URL with live preview */}
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                  Đường Link Ảnh Banner (Image URL) *
+                  {isVi ? "Đường Link Ảnh Banner (Image URL) *" : "Banner Image URL *"}
                 </label>
                 <input
                   type="url"
                   required
-                  placeholder="https://images.unsplash.com/... hoặc link ảnh cdn"
+                  placeholder={isVi ? "https://images.unsplash.com/... hoặc link ảnh cdn" : "https://images.unsplash.com/... or CDN image URL"}
                   value={formData.imageUrl}
                   onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono outline-none focus:border-[#ff7700] focus:bg-white"
@@ -481,12 +486,12 @@ export default function BannersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                    Chữ Trên Nút (CTA Button)
+                    {isVi ? "Chữ Trên Nút (CTA Button)" : "CTA Button Text"}
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Shop Now, Explore Trending"
+                    placeholder={isVi ? "Ví dụ: Shop Now, Khám Phá Ngay" : "e.g. Shop Now, Explore Trending"}
                     value={formData.buttonText}
                     onChange={(e) => setFormData({ ...formData, buttonText: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold outline-none focus:border-[#ff7700]"
@@ -495,12 +500,12 @@ export default function BannersPage() {
 
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                    Link Điều Hướng (Target Link)
+                    {isVi ? "Link Điều Hướng (Target Link)" : "Target Link URL"}
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. /shop hoặc /collections/halloween"
+                    placeholder={isVi ? "Ví dụ: /shop hoặc /collections/halloween" : "e.g. /shop or /collections/halloween"}
                     value={formData.linkUrl}
                     onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono outline-none focus:border-[#ff7700]"
@@ -512,7 +517,7 @@ export default function BannersPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                    Thứ Tự Hiển Thị (Order)
+                    {isVi ? "Thứ Tự Hiển Thị (Order)" : "Display Order"}
                   </label>
                   <input
                     type="number"
@@ -525,8 +530,8 @@ export default function BannersPage() {
 
                 <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl mt-4">
                   <div>
-                    <span className="font-bold text-slate-800 block">Kích Hoạt Slide</span>
-                    <span className="text-[11px] text-slate-500">Hiển thị ngay trên Storefront</span>
+                    <span className="font-bold text-slate-800 block">{isVi ? "Kích Hoạt Slide" : "Activate Slide"}</span>
+                    <span className="text-[11px] text-slate-500">{isVi ? "Hiển thị ngay trên Storefront" : "Display immediately on Storefront"}</span>
                   </div>
                   <input
                     type="checkbox"
@@ -544,14 +549,14 @@ export default function BannersPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
-                  Hủy Bỏ
+                  {isVi ? "Hủy Bỏ" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
                   className="px-6 py-2.5 rounded-xl bg-[#ff7700] hover:bg-[#e06800] text-black font-extrabold shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
                 >
-                  {saving ? "Đang lưu..." : editingBanner ? "Cập Nhật Banner" : "Tạo Banner Mới"}
+                  {saving ? (isVi ? "Đang lưu..." : "Saving...") : editingBanner ? (isVi ? "Cập Nhật Banner" : "Update Banner") : (isVi ? "Tạo Banner Mới" : "Create Banner")}
                 </button>
               </div>
             </form>

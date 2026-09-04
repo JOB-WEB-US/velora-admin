@@ -4,8 +4,11 @@ import React from "react";
 import { Users, Mail, ShoppingBag } from "lucide-react";
 import { useGetOrders } from "@/lib/hooks/useOrders";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 export default function CustomersPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
   const { data: orders = [], isLoading } = useGetOrders();
 
   // Group real orders by customer email to derive real customer metrics
@@ -21,7 +24,7 @@ export default function CustomersPage() {
     if (!customerMap[key]) {
       customerMap[key] = {
         id: `cust-${key}`,
-        name: o.customerName || "Khách Vãng Lai",
+        name: o.customerName || (isVi ? "Khách Vãng Lai" : "Guest Customer"),
         email: o.customerEmail || "N/A",
         totalOrders: 0,
         totalSpent: 0,
@@ -42,10 +45,12 @@ export default function CustomersPage() {
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
             <Users className="w-7 h-7 text-blue-600" />
-            Quản Lý Khách Hàng
+            {isVi ? "Quản Lý Khách Hàng" : "Customer Management"}
           </h1>
           <p className="text-sm text-slate-500 mt-1 font-medium">
-            Danh sách khách hàng và tổng quan tích lũy giao dịch từ Database Cloud.
+            {isVi
+              ? "Danh sách khách hàng và tổng quan tích lũy giao dịch từ Database Cloud."
+              : "Customer list and aggregate lifetime spend synced from real database orders."}
           </p>
         </div>
       </div>
@@ -56,18 +61,18 @@ export default function CustomersPage() {
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold text-xs">
               <tr>
-                <th className="p-4">Khách Hàng</th>
-                <th className="p-4">Email Liên Hệ</th>
-                <th className="p-4">Tổng Số Đơn Hàng</th>
-                <th className="p-4">Tổng Chi Tiêu Tích Lũy</th>
-                <th className="p-4">Ngày Mua Đơn Đầu</th>
+                <th className="p-4">{isVi ? "Khách Hàng" : "Customer"}</th>
+                <th className="p-4">{isVi ? "Email Liên Hệ" : "Contact Email"}</th>
+                <th className="p-4">{isVi ? "Tổng Số Đơn Hàng" : "Total Orders"}</th>
+                <th className="p-4">{isVi ? "Tổng Chi Tiêu Tích Lũy" : "Lifetime Spend"}</th>
+                <th className="p-4">{isVi ? "Ngày Mua Đơn Đầu" : "First Order Date"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-900 font-medium">
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 font-semibold">
-                    Đang tải danh sách khách hàng...
+                    {isVi ? "Đang tải danh sách khách hàng..." : "Loading customers..."}
                   </td>
                 </tr>
               ) : customersList.length > 0 ? (
@@ -86,7 +91,7 @@ export default function CustomersPage() {
                     <td className="p-4 font-extrabold text-blue-700 font-mono text-base">
                       <span className="flex items-center gap-1">
                         <ShoppingBag className="w-4 h-4 text-blue-600" />
-                        {c.totalOrders} đơn
+                        {c.totalOrders} {isVi ? "đơn" : "orders"}
                       </span>
                     </td>
                     <td className="p-4 font-extrabold text-emerald-600 text-base">{formatCurrency(c.totalSpent)}</td>
@@ -96,7 +101,7 @@ export default function CustomersPage() {
               ) : (
                 <tr>
                   <td colSpan={5} className="p-8 text-center text-slate-500 font-semibold">
-                    Chưa có khách hàng nào giao dịch.
+                    {isVi ? "Chưa có khách hàng nào giao dịch." : "No customer transactions recorded yet."}
                   </td>
                 </tr>
               )}

@@ -18,8 +18,12 @@ import {
   SizeAttr,
 } from "@/lib/hooks/useAttributes";
 import { slugify, formatCurrency } from "@/lib/utils";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 export default function AttributesPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
+
   const { data: attributes, isLoading } = useGetAttributes();
 
   // Mutations
@@ -60,18 +64,18 @@ export default function AttributesPage() {
   // --- Handlers: Product Type ---
   const handleCreateType = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!typeName) return alert("Vui lòng nhập tên loại sản phẩm");
+    if (!typeName) return alert(isVi ? "Vui lòng nhập tên loại sản phẩm" : "Please enter product type name");
     try {
       await createTypeMutation.mutateAsync({
         name: typeName,
         slug: slugify(typeName),
         baseCost: Number(typeBaseCost || 0),
       });
-      alert("Thêm loại sản phẩm master thành công!");
+      alert(isVi ? "Thêm loại sản phẩm master thành công!" : "Master product type added successfully!");
       setShowTypeModal(false);
       setTypeName("");
     } catch {
-      alert("Thêm loại sản phẩm thành công!");
+      alert(isVi ? "Thêm loại sản phẩm thành công!" : "Product type added successfully!");
       setShowTypeModal(false);
       setTypeName("");
     }
@@ -89,10 +93,10 @@ export default function AttributesPage() {
           baseCost: Number(typeBaseCost || 0),
         },
       });
-      alert("Cập nhật loại sản phẩm thành công!");
+      alert(isVi ? "Cập nhật loại sản phẩm thành công!" : "Product type updated successfully!");
       setEditingType(null);
     } catch {
-      alert("Cập nhật loại sản phẩm thành công!");
+      alert(isVi ? "Cập nhật loại sản phẩm thành công!" : "Product type updated successfully!");
       setEditingType(null);
     }
   };
@@ -103,36 +107,40 @@ export default function AttributesPage() {
         id: t.id,
         data: { isActive: !(t.isActive !== false) },
       });
-      alert(t.isActive !== false ? "Đã ẨN loại sản phẩm khỏi hệ thống!" : "Đã MỞ LẠI loại sản phẩm!");
+      alert(t.isActive !== false 
+        ? (isVi ? "Đã ẨN loại sản phẩm khỏi hệ thống!" : "Product type HIDDEN from system!") 
+        : (isVi ? "Đã MỞ LẠI loại sản phẩm!" : "Product type RESTORED!"));
     } catch {
-      alert("Đã cập nhật trạng thái loại sản phẩm!");
+      alert(isVi ? "Đã cập nhật trạng thái loại sản phẩm!" : "Product type status updated!");
     }
   };
 
   const handleDeleteType = async (id: string) => {
-    if (!confirm("CẢNH BÁO: Việc xóa cứng có thể làm ảnh hưởng các sản phẩm đang dùng loại phôi này. Khuyên dùng nút ẨN! Bạn có chắc xóa hẳn không?")) return;
+    if (!confirm(isVi 
+      ? "CẢNH BÁO: Việc xóa cứng có thể làm ảnh hưởng các sản phẩm đang dùng loại phôi này. Khuyên dùng nút ẨN! Bạn có chắc xóa hẳn không?" 
+      : "WARNING: Hard delete may affect products using this type. Consider hiding instead. Are you sure you want to permanently delete?")) return;
     try {
       await deleteTypeMutation.mutateAsync(id);
-      alert("Đã xóa loại sản phẩm thành công!");
+      alert(isVi ? "Đã xóa loại sản phẩm thành công!" : "Product type deleted successfully!");
     } catch {
-      alert("Đã xóa loại sản phẩm thành công!");
+      alert(isVi ? "Đã xóa loại sản phẩm thành công!" : "Product type deleted successfully!");
     }
   };
 
   // --- Handlers: Color ---
   const handleCreateColor = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!colorName) return alert("Vui lòng nhập tên màu sắc");
+    if (!colorName) return alert(isVi ? "Vui lòng nhập tên màu sắc" : "Please enter color name");
     try {
       await createColorMutation.mutateAsync({
         name: colorName,
         hexCode: colorHex,
       });
-      alert("Thêm màu sắc master thành công!");
+      alert(isVi ? "Thêm màu sắc master thành công!" : "Master color added successfully!");
       setShowColorModal(false);
       setColorName("");
     } catch {
-      alert("Thêm màu sắc thành công!");
+      alert(isVi ? "Thêm màu sắc thành công!" : "Color added successfully!");
       setShowColorModal(false);
       setColorName("");
     }
@@ -149,10 +157,10 @@ export default function AttributesPage() {
           hexCode: colorHex,
         },
       });
-      alert("Cập nhật màu sắc thành công!");
+      alert(isVi ? "Cập nhật màu sắc thành công!" : "Color updated successfully!");
       setEditingColor(null);
     } catch {
-      alert("Cập nhật màu sắc thành công!");
+      alert(isVi ? "Cập nhật màu sắc thành công!" : "Color updated successfully!");
       setEditingColor(null);
     }
   };
@@ -163,36 +171,38 @@ export default function AttributesPage() {
         id: c.id,
         data: { isActive: !(c.isActive !== false) },
       });
-      alert(c.isActive !== false ? "Đã ẨN màu sắc khỏi danh sách!" : "Đã MỞ LẠI màu sắc!");
+      alert(c.isActive !== false 
+        ? (isVi ? "Đã ẨN màu sắc khỏi danh sách!" : "Color HIDDEN from list!") 
+        : (isVi ? "Đã MỞ LẠI màu sắc!" : "Color RESTORED!"));
     } catch {
-      alert("Đã cập nhật trạng thái màu sắc!");
+      alert(isVi ? "Đã cập nhật trạng thái màu sắc!" : "Color status updated!");
     }
   };
 
   const handleDeleteColor = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa màu sắc này khỏi hệ thống?")) return;
+    if (!confirm(isVi ? "Bạn có chắc chắn muốn xóa màu sắc này khỏi hệ thống?" : "Are you sure you want to delete this color from the system?")) return;
     try {
       await deleteColorMutation.mutateAsync(id);
-      alert("Đã xóa màu sắc thành công!");
+      alert(isVi ? "Đã xóa màu sắc thành công!" : "Color deleted successfully!");
     } catch {
-      alert("Đã xóa màu sắc thành công!");
+      alert(isVi ? "Đã xóa màu sắc thành công!" : "Color deleted successfully!");
     }
   };
 
   // --- Handlers: Size ---
   const handleCreateSize = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!sizeName) return alert("Vui lòng nhập tên kích thước");
+    if (!sizeName) return alert(isVi ? "Vui lòng nhập tên kích thước" : "Please enter size name");
     try {
       await createSizeMutation.mutateAsync({
         name: sizeName,
         sortOrder: Number(sizeSortOrder || 0),
       });
-      alert("Thêm kích thước master thành công!");
+      alert(isVi ? "Thêm kích thước master thành công!" : "Master size added successfully!");
       setShowSizeModal(false);
       setSizeName("");
     } catch {
-      alert("Thêm kích thước thành công!");
+      alert(isVi ? "Thêm kích thước thành công!" : "Size added successfully!");
       setShowSizeModal(false);
       setSizeName("");
     }
@@ -209,10 +219,10 @@ export default function AttributesPage() {
           sortOrder: Number(sizeSortOrder || 0),
         },
       });
-      alert("Cập nhật kích thước thành công!");
+      alert(isVi ? "Cập nhật kích thước thành công!" : "Size updated successfully!");
       setEditingSize(null);
     } catch {
-      alert("Cập nhật kích thước thành công!");
+      alert(isVi ? "Cập nhật kích thước thành công!" : "Size updated successfully!");
       setEditingSize(null);
     }
   };
@@ -223,24 +233,26 @@ export default function AttributesPage() {
         id: s.id,
         data: { isActive: !(s.isActive !== false) },
       });
-      alert(s.isActive !== false ? "Đã ẨN kích thước size!" : "Đã MỞ LẠI kích thước size!");
+      alert(s.isActive !== false 
+        ? (isVi ? "Đã ẨN kích thước size!" : "Size HIDDEN!") 
+        : (isVi ? "Đã MỞ LẠI kích thước size!" : "Size RESTORED!"));
     } catch {
-      alert("Đã cập nhật trạng thái kích thước!");
+      alert(isVi ? "Đã cập nhật trạng thái kích thước!" : "Size status updated!");
     }
   };
 
   const handleDeleteSize = async (id: string) => {
-    if (!confirm("Bạn có chắc chắn muốn xóa kích thước này?")) return;
+    if (!confirm(isVi ? "Bạn có chắc chắn muốn xóa kích thước này?" : "Are you sure you want to delete this size?")) return;
     try {
       await deleteSizeMutation.mutateAsync(id);
-      alert("Đã xóa kích thước thành công!");
+      alert(isVi ? "Đã xóa kích thước thành công!" : "Size deleted successfully!");
     } catch {
-      alert("Đã xóa kích thước thành công!");
+      alert(isVi ? "Đã xóa kích thước thành công!" : "Size deleted successfully!");
     }
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center text-slate-500 font-bold">Đang tải bảng thuộc tính biến thể...</div>;
+    return <div className="p-8 text-center text-slate-500 font-bold">{isVi ? "Đang tải bảng thuộc tính biến thể..." : "Loading variant attributes..."}</div>;
   }
 
   const types = attributes?.types || [];
@@ -253,10 +265,12 @@ export default function AttributesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <Layers className="w-5 h-5 text-blue-600" /> Quản Lý Thuộc Tính Master Dùng Chung (Áo, Phonecase, Mũ Nón, Phụ Kiện)
+            <Layers className="w-5 h-5 text-blue-600" /> {isVi ? "Quản Lý Thuộc Tính Master Dùng Chung (Áo, Phonecase, Mũ Nón, Phụ Kiện)" : "Master Variant Attributes (Apparel, Phone Cases, Headwear, Accessories)"}
           </h1>
           <p className="text-xs text-slate-500">
-            Tự do thêm mới không giới hạn: Dòng máy (iPhone 15, S24...), Kiểu nón (Snapback, Bucket...), Kích thước (S, M, L...), Màu sắc & Chất liệu (Trong suốt, Matte...).
+            {isVi 
+              ? "Tự do thêm mới không giới hạn: Dòng máy (iPhone 15, S24...), Kiểu nón (Snapback, Bucket...), Kích thước (S, M, L...), Màu sắc & Chất liệu (Trong suốt, Matte...)."
+              : "Unlimited variations: Device models (iPhone 15, S24...), Headwear styles, Sizes (S, M, L...), Colors & Finishes."}
           </p>
         </div>
 
@@ -270,7 +284,7 @@ export default function AttributesPage() {
               }}
               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 transition flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> + Thêm Loại Phôi Mới
+              <Plus className="w-4 h-4" /> {isVi ? "+ Thêm Loại Phôi Mới" : "+ Add Product Type"}
             </button>
           )}
 
@@ -283,7 +297,7 @@ export default function AttributesPage() {
               }}
               className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> + Thêm Màu Sắc Mới
+              <Plus className="w-4 h-4" /> {isVi ? "+ Thêm Màu Sắc Mới" : "+ Add Color"}
             </button>
           )}
 
@@ -296,7 +310,7 @@ export default function AttributesPage() {
               }}
               className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-md shadow-purple-600/20 transition flex items-center gap-1.5"
             >
-              <Plus className="w-4 h-4" /> + Thêm Size Mới
+              <Plus className="w-4 h-4" /> {isVi ? "+ Thêm Size Mới" : "+ Add Size / Model"}
             </button>
           )}
         </div>
@@ -312,7 +326,7 @@ export default function AttributesPage() {
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
-          <Tag className="w-4 h-4" /> Bảng Loại Phôi Sản Phẩm ({types.length})
+          <Tag className="w-4 h-4" /> {isVi ? `Bảng Loại Phôi Sản Phẩm (${types.length})` : `Product Types (${types.length})`}
         </button>
 
         <button
@@ -323,7 +337,7 @@ export default function AttributesPage() {
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
-          <Palette className="w-4 h-4" /> Bảng Màu Sắc ({colors.length})
+          <Palette className="w-4 h-4" /> {isVi ? `Bảng Màu Sắc (${colors.length})` : `Colors (${colors.length})`}
         </button>
 
         <button
@@ -334,7 +348,7 @@ export default function AttributesPage() {
               : "border-transparent text-slate-500 hover:text-slate-900"
           }`}
         >
-          <Ruler className="w-4 h-4" /> Bảng Kích Thước / Dòng Máy / Quy Cách ({sizes.length})
+          <Ruler className="w-4 h-4" /> {isVi ? `Bảng Kích Thước / Dòng Máy / Quy Cách (${sizes.length})` : `Sizes / Models / Specs (${sizes.length})`}
         </button>
       </div>
 
@@ -344,12 +358,12 @@ export default function AttributesPage() {
           <table className="w-full text-left text-xs font-medium">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold">
               <tr>
-                <th className="p-4">STT</th>
-                <th className="p-4">Tên Loại Phôi</th>
-                <th className="p-4">Slug SEO</th>
-                <th className="p-4">Giá Vốn Ước Tính (Base Cost)</th>
-                <th className="p-4">Trạng Thái</th>
-                <th className="p-4 text-center">Thao Tác</th>
+                <th className="p-4">#</th>
+                <th className="p-4">{isVi ? "Tên Loại Phôi" : "Product Type Name"}</th>
+                <th className="p-4">{isVi ? "Slug SEO" : "SEO Slug"}</th>
+                <th className="p-4">{isVi ? "Giá Vốn Ước Tính (Base Cost)" : "Base Cost"}</th>
+                <th className="p-4">{isVi ? "Trạng Thái" : "Status"}</th>
+                <th className="p-4 text-center">{isVi ? "Thao Tác" : "Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-900">
@@ -369,11 +383,11 @@ export default function AttributesPage() {
                     <td className="p-4">
                       {isTypeActive ? (
                         <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-[11px] inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Đang sử dụng
+                          <CheckCircle2 className="w-3 h-3" /> {isVi ? "Đang sử dụng" : "Active"}
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 font-extrabold text-[11px] inline-flex items-center gap-1">
-                          <EyeOff className="w-3 h-3 text-slate-500" /> Đã Ẩn
+                          <EyeOff className="w-3 h-3 text-slate-500" /> {isVi ? "Đã Ẩn" : "Hidden"}
                         </span>
                       )}
                     </td>
@@ -386,10 +400,10 @@ export default function AttributesPage() {
                               ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
                               : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300"
                           }`}
-                          title={isTypeActive ? "Ẩn loại phôi này" : "Mở lại loại phôi này"}
+                          title={isTypeActive ? (isVi ? "Ẩn loại phôi này" : "Hide this product type") : (isVi ? "Mở lại loại phôi này" : "Restore this product type")}
                         >
                           {isTypeActive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                          {isTypeActive ? "Ẩn" : "Hiện"}
+                          {isTypeActive ? (isVi ? "Ẩn" : "Hide") : (isVi ? "Hiện" : "Show")}
                         </button>
                         <button
                           onClick={() => {
@@ -398,14 +412,14 @@ export default function AttributesPage() {
                             setTypeBaseCost(t.baseCost || 0);
                           }}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
-                          title="Sửa Loại Phôi"
+                          title={isVi ? "Sửa Loại Phôi" : "Edit Product Type"}
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteType(t.id)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition"
-                          title="Xóa Loại Phôi"
+                          title={isVi ? "Xóa Loại Phôi" : "Delete Product Type"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -446,7 +460,7 @@ export default function AttributesPage() {
                   <button
                     onClick={() => handleToggleColorActive(c)}
                     className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition"
-                    title={isColorActive ? "Bấm để Ẩn màu này" : "Bấm để Mở lại màu này"}
+                    title={isColorActive ? (isVi ? "Bấm để Ẩn màu này" : "Click to hide color") : (isVi ? "Bấm để Mở lại màu này" : "Click to show color")}
                   >
                     {isColorActive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-emerald-600" />}
                   </button>
@@ -457,14 +471,14 @@ export default function AttributesPage() {
                       setColorHex(c.hexCode);
                     }}
                     className="p-1 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition"
-                    title="Sửa Màu"
+                    title={isVi ? "Sửa Màu" : "Edit Color"}
                   >
                     <Edit3 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDeleteColor(c.id)}
                     className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                    title="Xóa Màu"
+                    title={isVi ? "Xóa Màu" : "Delete Color"}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -481,10 +495,10 @@ export default function AttributesPage() {
           <table className="w-full text-left text-xs font-medium">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold">
               <tr>
-                <th className="p-4">Thứ Tự Sắp Xếp</th>
-                <th className="p-4">Tên Size</th>
-                <th className="p-4">Trạng Thái</th>
-                <th className="p-4 text-center">Thao Tác</th>
+                <th className="p-4">{isVi ? "Thứ Tự Sắp Xếp" : "Sort Order"}</th>
+                <th className="p-4">{isVi ? "Tên Size / Quy Cách" : "Size / Model Name"}</th>
+                <th className="p-4">{isVi ? "Trạng Thái" : "Status"}</th>
+                <th className="p-4 text-center">{isVi ? "Thao Tác" : "Actions"}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-900">
@@ -497,11 +511,11 @@ export default function AttributesPage() {
                     <td className="p-4">
                       {isSizeActive ? (
                         <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-extrabold text-[11px] inline-flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Khả dụng
+                          <CheckCircle2 className="w-3 h-3" /> {isVi ? "Khả dụng" : "Active"}
                         </span>
                       ) : (
                         <span className="px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700 border border-slate-300 font-extrabold text-[11px] inline-flex items-center gap-1">
-                          <EyeOff className="w-3 h-3 text-slate-500" /> Đã Ẩn
+                          <EyeOff className="w-3 h-3 text-slate-500" /> {isVi ? "Đã Ẩn" : "Hidden"}
                         </span>
                       )}
                     </td>
@@ -514,10 +528,10 @@ export default function AttributesPage() {
                               ? "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300"
                               : "bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-300"
                           }`}
-                          title={isSizeActive ? "Ẩn size này" : "Mở lại size này"}
+                          title={isSizeActive ? (isVi ? "Ẩn size này" : "Hide this size") : (isVi ? "Mở lại size này" : "Restore this size")}
                         >
                           {isSizeActive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
-                          {isSizeActive ? "Ẩn" : "Hiện"}
+                          {isSizeActive ? (isVi ? "Ẩn" : "Hide") : (isVi ? "Hiện" : "Show")}
                         </button>
                         <button
                           onClick={() => {
@@ -526,14 +540,14 @@ export default function AttributesPage() {
                             setSizeSortOrder(s.sortOrder);
                           }}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
-                          title="Sửa Size"
+                          title={isVi ? "Sửa Size" : "Edit Size"}
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteSize(s.id)}
                           className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition"
-                          title="Xóa Size"
+                          title={isVi ? "Xóa Size" : "Delete Size"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -553,7 +567,7 @@ export default function AttributesPage() {
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">
-                {editingType ? "Cập Nhật Loại Phôi Sản Phẩm" : "Thêm Loại Phôi Sản Phẩm Master Mới"}
+                {editingType ? (isVi ? "Cập Nhật Loại Phôi Sản Phẩm" : "Edit Product Type") : (isVi ? "Thêm Loại Phôi Sản Phẩm Master Mới" : "Add Master Product Type")}
               </h3>
               <button
                 onClick={() => {
@@ -567,18 +581,18 @@ export default function AttributesPage() {
             </div>
             <form onSubmit={editingType ? handleUpdateType : handleCreateType} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Tên Loại Phôi Áo / Hàng Hóa *</label>
+                <label className="font-bold text-slate-700">{isVi ? "Tên Loại Phôi Áo / Hàng Hóa *" : "Product Type Name *"}</label>
                 <input
                   type="text"
                   required
                   value={typeName}
                   onChange={(e) => setTypeName(e.target.value)}
-                  placeholder="Ví dụ: Zip Hoodie, Mug Sứ, Túi Canvas..."
+                  placeholder={isVi ? "Ví dụ: Zip Hoodie, Mug Sứ, Túi Canvas..." : "E.g. Zip Hoodie, Ceramic Mug, Canvas Tote..."}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-semibold text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Giá Vốn Nhập Phôi Ước Tính ($)</label>
+                <label className="font-bold text-slate-700">{isVi ? "Giá Vốn Nhập Phôi Ước Tính ($)" : "Estimated Base Production Cost ($)"}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -597,10 +611,10 @@ export default function AttributesPage() {
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
                 >
-                  Hủy
+                  {isVi ? "Hủy" : "Cancel"}
                 </button>
                 <button type="submit" className="px-5 py-2 rounded-xl bg-blue-600 text-white font-bold flex items-center gap-1.5">
-                  <Save className="w-4 h-4" /> {editingType ? "Cập Nhật" : "Thêm Loại Phôi"}
+                  <Save className="w-4 h-4" /> {editingType ? (isVi ? "Cập Nhật" : "Update") : (isVi ? "Thêm Loại Phôi" : "Add Type")}
                 </button>
               </div>
             </form>
@@ -614,7 +628,7 @@ export default function AttributesPage() {
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">
-                {editingColor ? "Cập Nhật Màu Sắc Master" : "Thêm Màu Sắc Master Mới"}
+                {editingColor ? (isVi ? "Cập Nhật Màu Sắc Master" : "Edit Master Color") : (isVi ? "Thêm Màu Sắc Master Mới" : "Add Master Color")}
               </h3>
               <button
                 onClick={() => {
@@ -628,18 +642,18 @@ export default function AttributesPage() {
             </div>
             <form onSubmit={editingColor ? handleUpdateColor : handleCreateColor} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Tên Màu Sắc *</label>
+                <label className="font-bold text-slate-700">{isVi ? "Tên Màu Sắc *" : "Color Name *"}</label>
                 <input
                   type="text"
                   required
                   value={colorName}
                   onChange={(e) => setColorName(e.target.value)}
-                  placeholder="Ví dụ: Light Pink, Charcoal..."
+                  placeholder={isVi ? "Ví dụ: Light Pink, Charcoal..." : "E.g. Light Pink, Charcoal..."}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-semibold text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Mã Màu (Hex Code) *</label>
+                <label className="font-bold text-slate-700">{isVi ? "Mã Màu (Hex Code) *" : "Color Code (Hex) *"}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
@@ -665,10 +679,10 @@ export default function AttributesPage() {
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
                 >
-                  Hủy
+                  {isVi ? "Hủy" : "Cancel"}
                 </button>
                 <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-bold flex items-center gap-1.5">
-                  <Save className="w-4 h-4" /> {editingColor ? "Cập Nhật" : "Thêm Màu Sắc"}
+                  <Save className="w-4 h-4" /> {editingColor ? (isVi ? "Cập Nhật" : "Update") : (isVi ? "Thêm Màu Sắc" : "Add Color")}
                 </button>
               </div>
             </form>
@@ -682,7 +696,7 @@ export default function AttributesPage() {
           <div className="w-full max-w-md rounded-2xl bg-white border border-slate-200 p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="text-sm font-extrabold text-slate-900">
-                {editingSize ? "Cập Nhật Kích Thước Size" : "Thêm Size Kích Thước Mới"}
+                {editingSize ? (isVi ? "Cập Nhật Kích Thước Size" : "Edit Size / Model") : (isVi ? "Thêm Size Kích Thước Mới" : "Add Size / Model")}
               </h3>
               <button
                 onClick={() => {
@@ -696,18 +710,18 @@ export default function AttributesPage() {
             </div>
             <form onSubmit={editingSize ? handleUpdateSize : handleCreateSize} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Tên Size / Dòng Máy / Quy Cách Master *</label>
+                <label className="font-bold text-slate-700">{isVi ? "Tên Size / Dòng Máy / Quy Cách Master *" : "Master Size / Model / Specification *"}</label>
                 <input
                   type="text"
                   required
                   value={sizeName}
                   onChange={(e) => setSizeName(e.target.value)}
-                  placeholder="Ví dụ: iPhone 15 Pro Max, Snapback, S, M, XL..."
+                  placeholder={isVi ? "Ví dụ: iPhone 15 Pro Max, Snapback, S, M, XL..." : "E.g. iPhone 15 Pro Max, Snapback, S, M, XL..."}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 font-bold text-slate-900"
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-bold text-slate-700">Thứ Tự Sắp Xếp (Sort Order)</label>
+                <label className="font-bold text-slate-700">{isVi ? "Thứ Tự Sắp Xếp (Sort Order)" : "Sort Order"}</label>
                 <input
                   type="number"
                   value={sizeSortOrder}
@@ -724,10 +738,10 @@ export default function AttributesPage() {
                   }}
                   className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
                 >
-                  Hủy
+                  {isVi ? "Hủy" : "Cancel"}
                 </button>
                 <button type="submit" className="px-5 py-2 rounded-xl bg-purple-600 text-white font-bold flex items-center gap-1.5">
-                  <Save className="w-4 h-4" /> {editingSize ? "Cập Nhật" : "Thêm Size"}
+                  <Save className="w-4 h-4" /> {editingSize ? (isVi ? "Cập Nhật" : "Update") : (isVi ? "Thêm Size" : "Add Size")}
                 </button>
               </div>
             </form>

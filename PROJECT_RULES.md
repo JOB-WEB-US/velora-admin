@@ -45,6 +45,11 @@ Trừ khi được sự đồng ý của User, **TUYỆT ĐỐ KHÔNG** sử d�
    - Phía Frontend Admin không lưu vết các dữ liệu này vào `localStorage` hay `sessionStorage`. Chỉ lưu trong bộ nhớ tạm của TanStack Query cache.
 4. **Bảo Vệ Route (Route Guards):**
    - Sử dụng Next.js Middleware (`middleware.ts`) kiểm tra Session Token trước khi cho phép truy cập các trang Dashboard `/admin/*`. Chuyển hướng về `/login` nếu chưa xác thực.
+5. **🌐 Quy Tắc Ngôn Ngữ Song Ngữ (Bilingual Directive — MẶC ĐỊNH TIẾNG ANH):**
+   - **Mặc định là Tiếng Anh (`'en'`)**: Mọi người dùng mới, ẩn danh, hoặc phiên xóa cache mở Admin phải thấy Tiếng Anh 100%. Quản lý qua Zustand `useLanguageStore` và lưu `localStorage` (`velora_admin_lang`).
+   - **Bắt buộc hỗ trợ song ngữ ngay khi thêm tính năng mới**: Mọi màn hình mới, modal mới, nút bấm, placeholder, confirm/alert, badge trạng thái **PHẢI** được viết song ngữ EN/VI ngay từ đầu (`const { language } = useLanguageStore(); const isVi = language === "vi";`). Tuyệt đối không hardcode riêng một thứ tiếng để phải sửa lại. Chi tiết xem tại [LANGUAGE_GUIDELINES.md](file:///D:/WebUs/LANGUAGE_GUIDELINES.md).
+6. **🛡️ Tiêu Chuẩn An Toàn & Bảo Mật Dữ Liệu:**
+   - Tuyệt đối không để lộ secret key qua tiền tố `NEXT_PUBLIC_`, không lưu dữ liệu nhạy cảm của khách hàng trong storage trình duyệt, tuân thủ nghiêm ngặt [SECURITY_GUIDELINES.md](file:///D:/WebUs/SECURITY_GUIDELINES.md).
 
 ---
 

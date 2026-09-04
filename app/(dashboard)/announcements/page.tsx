@@ -20,6 +20,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { apiClient } from "@/lib/api/client";
+import { useLanguageStore } from "@/store/useLanguageStore";
 
 interface AnnouncementItem {
   id: string;
@@ -40,27 +41,29 @@ interface AnnouncementConfig {
 }
 
 const COLOR_PRESETS = [
-  { name: "Đỏ Đô Sang Trọng", hex: "#a80000" },
-  { name: "Đen Tối Giản", hex: "#111111" },
-  { name: "Cam Neon Rực Rỡ", hex: "#ff7700" },
-  { name: "Xanh Dương Royal", hex: "#1e40af" },
-  { name: "Xanh Ngọc Emerald", hex: "#059669" },
-  { name: "Tím Hoàng Gia", hex: "#7c3aed" },
-  { name: "Hồng Ruby", hex: "#e11d48" },
-  { name: "Hổ Phách Autumn", hex: "#b45309" },
+  { nameEn: "Luxury Maroon", nameVi: "Đỏ Đô Sang Trọng", hex: "#a80000" },
+  { nameEn: "Minimal Black", nameVi: "Đen Tối Giản", hex: "#111111" },
+  { nameEn: "Vibrant Orange", nameVi: "Cam Neon Rực Rỡ", hex: "#ff7700" },
+  { nameEn: "Royal Blue", nameVi: "Xanh Dương Royal", hex: "#1e40af" },
+  { nameEn: "Emerald Green", nameVi: "Xanh Ngọc Emerald", hex: "#059669" },
+  { nameEn: "Imperial Purple", nameVi: "Tím Hoàng Gia", hex: "#7c3aed" },
+  { nameEn: "Ruby Pink", nameVi: "Hồng Ruby", hex: "#e11d48" },
+  { nameEn: "Autumn Amber", nameVi: "Hổ Phách Autumn", hex: "#b45309" },
 ];
 
 const TEXT_COLOR_PRESETS = [
-  { name: "Trắng Thuần", hex: "#ffffff" },
-  { name: "Vàng Kim Gold", hex: "#fbbf24" },
-  { name: "Cam Neon", hex: "#ff7700" },
-  { name: "Xanh Cyan", hex: "#38bdf8" },
-  { name: "Xanh Lime", hex: "#a3e635" },
+  { nameEn: "Pure White", nameVi: "Trắng Thuần", hex: "#ffffff" },
+  { nameEn: "Gold Yellow", nameVi: "Vàng Kim Gold", hex: "#fbbf24" },
+  { nameEn: "Neon Orange", nameVi: "Cam Neon", hex: "#ff7700" },
+  { nameEn: "Cyan Blue", nameVi: "Xanh Cyan", hex: "#38bdf8" },
+  { nameEn: "Lime Green", nameVi: "Xanh Lime", hex: "#a3e635" },
 ];
 
 const SUGGESTIONS = [
   {
-    category: "Khuyến Mãi & Giảm Giá",
+    id: "promo",
+    categoryEn: "Promotions & Discounts",
+    categoryVi: "Khuyến Mãi & Giảm Giá",
     icon: Tag,
     items: [
       { text: "🔥 10% OFF YOUR ENTIRE ORDER — USE CODE: VELORA10", linkUrl: "/shop" },
@@ -71,7 +74,9 @@ const SUGGESTIONS = [
     ],
   },
   {
-    category: "Vận Chuyển & Giao Hàng",
+    id: "shipping",
+    categoryEn: "Shipping & Delivery",
+    categoryVi: "Vận Chuyển & Giao Hàng",
     icon: Truck,
     items: [
       { text: "🚚 FREE EXPRESS US SHIPPING ON ORDERS OVER $75", linkUrl: "/pages/order-tracking" },
@@ -81,7 +86,9 @@ const SUGGESTIONS = [
     ],
   },
   {
-    category: "Mùa Lễ Hội & Xu Hướng",
+    id: "seasons",
+    categoryEn: "Festive Seasons & Trends",
+    categoryVi: "Mùa Lễ Hội & Xu Hướng",
     icon: Sparkles,
     items: [
       { text: "🎃 HALLOWEEN SPOOKY COLLECTION IS LIVE — SHOP NOW", linkUrl: "/collections/halloween" },
@@ -92,7 +99,9 @@ const SUGGESTIONS = [
     ],
   },
   {
-    category: "Cam Kết Chất Lượng & Uy Tín",
+    id: "trust",
+    categoryEn: "Quality Assurance & Trust",
+    categoryVi: "Cam Kết Chất Lượng & Uy Tín",
     icon: ShieldCheck,
     items: [
       { text: "⭐ 100% PREMIUM RING-SPUN COTTON & DURABLE DTG PRINTS", linkUrl: "/shop" },
@@ -105,6 +114,9 @@ const SUGGESTIONS = [
 const EMOJI_SHORTCUTS = ["🔥", "⭐", "🚚", "⚡", "🎁", "🎃", "🎄", "💥", "📦", "🇺🇸", "🏷️", "📻", "🤠", "🎉", "🛡️"];
 
 export default function AnnouncementsPage() {
+  const { language } = useLanguageStore();
+  const isVi = language === "vi";
+
   const [config, setConfig] = useState<AnnouncementConfig>({
     enabled: true,
     speed: "normal",
@@ -140,7 +152,7 @@ export default function AnnouncementsPage() {
         setConfig(res.data.data);
       }
     } catch (err: any) {
-      console.error("Lỗi khi tải dữ liệu chữ chạy:", err);
+      console.error(isVi ? "Lỗi khi tải dữ liệu chữ chạy:" : "Error loading announcements:", err);
     } finally {
       setLoading(false);
     }
@@ -165,7 +177,7 @@ export default function AnnouncementsPage() {
       setConfigSavedSuccess(true);
       setTimeout(() => setConfigSavedSuccess(false), 3000);
     } catch (err: any) {
-      alert(err.message || "Lỗi khi lưu cấu hình!");
+      alert(err.message || (isVi ? "Lỗi khi lưu cấu hình!" : "Failed to save configuration!"));
     } finally {
       setSavingConfig(false);
     }
@@ -218,18 +230,22 @@ export default function AnnouncementsPage() {
           ...prev,
           items: [...prev.items, res.data.data],
         }));
-        setAddedNotice(`Đã thêm: "${suggestion.text}"`);
+        setAddedNotice(
+          isVi
+            ? `Đã thêm: "${suggestion.text}"`
+            : `Added: "${suggestion.text}"`
+        );
         setTimeout(() => setAddedNotice(null), 3000);
       }
     } catch (err: any) {
-      alert(err.message || "Lỗi khi thêm nhanh gợi ý!");
+      alert(err.message || (isVi ? "Lỗi khi thêm nhanh gợi ý!" : "Failed to add suggestion!"));
     }
   };
 
   const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.text.trim()) {
-      alert("Vui lòng nhập nội dung chữ chạy!");
+      alert(isVi ? "Vui lòng nhập nội dung chữ chạy!" : "Please enter announcement text!");
       return;
     }
 
@@ -250,7 +266,7 @@ export default function AnnouncementsPage() {
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      alert(err.message || "Lỗi khi lưu chữ chạy!");
+      alert(err.message || (isVi ? "Lỗi khi lưu chữ chạy!" : "Failed to save announcement!"));
     } finally {
       setSavingItem(false);
     }
@@ -264,12 +280,15 @@ export default function AnnouncementsPage() {
         items: prev.items.map((i) => (i.id === item.id ? { ...i, isActive: !i.isActive } : i)),
       }));
     } catch (err: any) {
-      alert(err.message || "Lỗi cập nhật trạng thái!");
+      alert(err.message || (isVi ? "Lỗi cập nhật trạng thái!" : "Failed to update status!"));
     }
   };
 
   const handleDeleteItem = async (item: AnnouncementItem) => {
-    if (!confirm(`Bạn có chắc muốn xóa dòng chữ chạy: "${item.text}"?`)) return;
+    const confirmMsg = isVi
+      ? `Bạn có chắc muốn xóa dòng chữ chạy: "${item.text}"?`
+      : `Are you sure you want to delete announcement: "${item.text}"?`;
+    if (!confirm(confirmMsg)) return;
 
     try {
       await apiClient.delete(`/announcements/admin/${item.id}`);
@@ -278,7 +297,7 @@ export default function AnnouncementsPage() {
         items: prev.items.filter((i) => i.id !== item.id),
       }));
     } catch (err: any) {
-      alert(err.message || "Lỗi khi xóa!");
+      alert(err.message || (isVi ? "Lỗi khi xóa!" : "Failed to delete announcement!"));
     }
   };
 
@@ -297,7 +316,7 @@ export default function AnnouncementsPage() {
     try {
       await apiClient.post("/announcements/admin/reorder", { items: reordered });
     } catch (err: any) {
-      console.error("Lỗi khi cập nhật thứ tự:", err);
+      console.error(isVi ? "Lỗi khi cập nhật thứ tự:" : "Error updating order:", err);
     }
   };
 
@@ -316,10 +335,12 @@ export default function AnnouncementsPage() {
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
             <Megaphone className="w-7 h-7 text-[#ff7700]" />
-            Quản Lý Chữ Chạy Header (Top Bar Announcements)
+            {isVi ? "Quản Lý Chữ Chạy Header (Top Bar Announcements)" : "Top Bar Announcements Manager"}
           </h1>
           <p className="text-xs text-slate-500 mt-1">
-            Tùy biến thanh khẩu hiệu chữ chạy (Marquee) trên cùng của website, hỗ trợ kho mẫu gợi ý 1-click và xem trước trực tiếp.
+            {isVi
+              ? "Tùy biến thanh khẩu hiệu chữ chạy (Marquee) trên cùng của website, hỗ trợ kho mẫu gợi ý 1-click và xem trước trực tiếp."
+              : "Customize the top marquee banner across the storefront with 1-click preset suggestions and live preview."}
           </p>
         </div>
 
@@ -327,7 +348,7 @@ export default function AnnouncementsPage() {
           <button
             onClick={fetchAnnouncements}
             className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-            title="Làm mới dữ liệu"
+            title={isVi ? "Làm mới dữ liệu" : "Refresh data"}
           >
             <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
           </button>
@@ -336,7 +357,7 @@ export default function AnnouncementsPage() {
             onClick={openCreateModal}
             className="px-5 py-2.5 rounded-xl bg-[#ff7700] hover:bg-[#e06800] text-black font-extrabold text-xs shadow-md shadow-orange-500/20 transition flex items-center gap-2 cursor-pointer"
           >
-            <Plus size={16} /> Thêm Dòng Chữ Mới
+            <Plus size={16} /> {isVi ? "Thêm Dòng Chữ Mới" : "Add New Announcement"}
           </button>
         </div>
       </div>
@@ -345,7 +366,9 @@ export default function AnnouncementsPage() {
       {addedNotice && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-bold flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-          <span>{addedNotice} (Đã thêm vào danh sách và cập nhật ra storefront)!</span>
+          <span>
+            {addedNotice} ({isVi ? "Đã thêm vào danh sách và cập nhật ra storefront" : "Added to list and updated storefront"})!
+          </span>
         </div>
       )}
 
@@ -355,11 +378,17 @@ export default function AnnouncementsPage() {
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
             <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">
-              Trình Xem Trước Trực Tiếp Giao Diện Storefront (Live Preview)
+              {isVi ? "Trình Xem Trước Trực Tiếp Giao Diện Storefront (Live Preview)" : "Storefront Live Marquee Preview"}
             </h2>
           </div>
           <span className="text-[11px] font-bold text-slate-400">
-            {config.enabled ? "● Đang bật trên website" : "○ Đang tắt toàn bộ"}
+            {config.enabled
+              ? isVi
+                ? "● Đang bật trên website"
+                : "● Live on storefront"
+              : isVi
+              ? "○ Đang tắt toàn bộ"
+              : "○ Disabled globally"}
           </span>
         </div>
 
@@ -383,13 +412,17 @@ export default function AnnouncementsPage() {
               </div>
             ) : (
               <div className="w-full text-center text-xs opacity-75 py-1">
-                ⚠️ Chưa có dòng chữ nào đang được kích hoạt. Hãy bật hoặc thêm mới một dòng chữ bên dưới!
+                {isVi
+                  ? "⚠️ Chưa có dòng chữ nào đang được kích hoạt. Hãy bật hoặc thêm mới một dòng chữ bên dưới!"
+                  : "⚠️ No announcement active. Enable or add a new marquee item below!"}
               </div>
             )}
           </div>
         ) : (
           <div className="w-full py-3 bg-slate-100 rounded-xl text-center text-xs font-bold text-slate-400 border border-dashed border-slate-300">
-            Thanh chữ chạy Top Bar hiện đang bị tắt. Người dùng vào website sẽ không thấy thanh này.
+            {isVi
+              ? "Thanh chữ chạy Top Bar hiện đang bị tắt. Người dùng vào website sẽ không thấy thanh này."
+              : "The Top Bar marquee banner is currently disabled. Store visitors will not see this banner."}
           </div>
         )}
       </div>
@@ -400,13 +433,13 @@ export default function AnnouncementsPage() {
           <div className="flex items-center gap-2">
             <Palette className="w-5 h-5 text-blue-600" />
             <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider">
-              1. Cấu Hình Màu Sắc & Tốc Độ Chạy Chữ
+              {isVi ? "1. Cấu Hình Màu Sắc & Tốc Độ Chạy Chữ" : "1. Appearance & Speed Settings"}
             </h2>
           </div>
 
           {configSavedSuccess && (
             <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold flex items-center gap-1.5 animate-in fade-in">
-              <CheckCircle2 size={13} /> Đã lưu cấu hình thành công
+              <CheckCircle2 size={13} /> {isVi ? "Đã lưu cấu hình thành công" : "Settings saved successfully"}
             </span>
           )}
         </div>
@@ -414,14 +447,24 @@ export default function AnnouncementsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
             <div>
-              <span className="text-xs font-extrabold text-slate-800 block">Hiển Thị Thanh Top Bar</span>
+              <span className="text-xs font-extrabold text-slate-800 block">
+                {isVi ? "Hiển Thị Thanh Top Bar" : "Display Top Bar Marquee"}
+              </span>
               <p className="text-[11px] text-slate-500 mt-1">
-                Bật hoặc tắt hoàn toàn thanh chữ chạy ở trên cùng của trang chủ và tất cả các trang shop.
+                {isVi
+                  ? "Bật hoặc tắt hoàn toàn thanh chữ chạy ở trên cùng của trang chủ và tất cả các trang shop."
+                  : "Enable or completely disable the top announcement banner on the storefront."}
               </p>
             </div>
             <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-200">
               <span className="text-xs font-bold text-slate-700">
-                {config.enabled ? "Trạng thái: Bật" : "Trạng thái: Tắt"}
+                {config.enabled
+                  ? isVi
+                    ? "Trạng thái: Bật"
+                    : "Status: Enabled"
+                  : isVi
+                  ? "Trạng thái: Tắt"
+                  : "Status: Disabled"}
               </span>
               <input
                 type="checkbox"
@@ -435,10 +478,12 @@ export default function AnnouncementsPage() {
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
             <div>
               <span className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
-                <Gauge size={15} className="text-blue-600" /> Tốc Độ Cuộn Chữ (Marquee Speed)
+                <Gauge size={15} className="text-blue-600" /> {isVi ? "Tốc Độ Cuộn Chữ (Marquee Speed)" : "Marquee Scroll Speed"}
               </span>
               <p className="text-[11px] text-slate-500 mt-1">
-                Điều chỉnh thời gian một vòng cuộn chạy chữ từ phải qua trái.
+                {isVi
+                  ? "Điều chỉnh thời gian một vòng cuộn chạy chữ từ phải qua trái."
+                  : "Adjust duration for one full scroll cycle from right to left."}
               </p>
             </div>
             <div className="mt-4">
@@ -447,15 +492,23 @@ export default function AnnouncementsPage() {
                 onChange={(e) => setConfig({ ...config, speed: e.target.value as any })}
                 className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 outline-none focus:border-blue-500"
               >
-                <option value="slow">🐢 Chậm rãi (35 giây) — Dễ đọc nội dung dài</option>
-                <option value="normal">⚡ Tiêu chuẩn (25 giây) — Mượt mà & Tự nhiên</option>
-                <option value="fast">🚀 Nhanh (15 giây) — Sôi động, kích thích mua sắm</option>
+                <option value="slow">
+                  {isVi ? "🐢 Chậm rãi (35 giây) — Dễ đọc nội dung dài" : "🐢 Slow (35s) — Easy reading for longer text"}
+                </option>
+                <option value="normal">
+                  {isVi ? "⚡ Tiêu chuẩn (25 giây) — Mượt mà & Tự nhiên" : "⚡ Standard (25s) — Smooth & balanced"}
+                </option>
+                <option value="fast">
+                  {isVi ? "🚀 Nhanh (15 giây) — Sôi động, kích thích mua sắm" : "🚀 Fast (15s) — High urgency & lively"}
+                </option>
               </select>
             </div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-            <span className="text-xs font-extrabold text-slate-800 block">Màu Chữ (Text Color)</span>
+            <span className="text-xs font-extrabold text-slate-800 block">
+              {isVi ? "Màu Chữ (Text Color)" : "Text Color"}
+            </span>
             <div className="flex flex-wrap gap-2 pt-1">
               {TEXT_COLOR_PRESETS.map((tc) => (
                 <button
@@ -469,7 +522,7 @@ export default function AnnouncementsPage() {
                   }`}
                 >
                   <span className="w-3 h-3 rounded-full border border-slate-300" style={{ backgroundColor: tc.hex }} />
-                  {tc.name}
+                  {isVi ? tc.nameVi : tc.nameEn}
                 </button>
               ))}
             </div>
@@ -478,7 +531,7 @@ export default function AnnouncementsPage() {
 
         <div className="space-y-2 pt-2 border-t border-slate-100">
           <label className="text-xs font-extrabold text-slate-800 block">
-            Màu Nền Thanh Chữ Chạy (Background Color):
+            {isVi ? "Màu Nền Thanh Chữ Chạy (Background Color):" : "Marquee Background Color:"}
           </label>
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2.5">
             {COLOR_PRESETS.map((cp) => (
@@ -494,7 +547,7 @@ export default function AnnouncementsPage() {
               >
                 <span className="w-6 h-6 rounded-full shadow-inner border border-black/10" style={{ backgroundColor: cp.hex }} />
                 <span className="text-[11px] font-bold text-slate-800 text-center leading-tight truncate w-full">
-                  {cp.name}
+                  {isVi ? cp.nameVi : cp.nameEn}
                 </span>
                 <span className="text-[9px] font-mono text-slate-400">{cp.hex}</span>
               </button>
@@ -502,7 +555,9 @@ export default function AnnouncementsPage() {
           </div>
 
           <div className="flex items-center gap-3 pt-2">
-            <span className="text-xs font-bold text-slate-600">Hoặc chọn mã màu tùy ý:</span>
+            <span className="text-xs font-bold text-slate-600">
+              {isVi ? "Hoặc chọn mã màu tùy ý:" : "Or pick custom HEX code:"}
+            </span>
             <input
               type="color"
               value={config.bgColor}
@@ -524,7 +579,14 @@ export default function AnnouncementsPage() {
             disabled={savingConfig}
             className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            <Save className="w-4 h-4" /> {savingConfig ? "Đang lưu..." : "Lưu & Áp Dụng Màu Sắc & Tốc Độ"}
+            <Save className="w-4 h-4" />{" "}
+            {savingConfig
+              ? isVi
+                ? "Đang lưu..."
+                : "Saving..."
+              : isVi
+              ? "Lưu & Áp Dụng Màu Sắc & Tốc Độ"
+              : "Save & Apply Settings"}
           </button>
         </div>
       </form>
@@ -535,10 +597,14 @@ export default function AnnouncementsPage() {
           <div>
             <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-amber-500" />
-              2. Kho Gợi Ý Mẫu Khẩu Hiệu Bán Hàng (1-Click Suggestions)
+              {isVi
+                ? "2. Kho Gợi Ý Mẫu Khẩu Hiệu Bán Hàng (1-Click Suggestions)"
+                : "2. Ready-To-Use Marketing Presets (1-Click Suggestions)"}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Chọn nhanh các mẫu câu chữ chạy thu hút khách hàng, kích thích tăng tỷ lệ chuyển đổi và doanh số POD.
+              {isVi
+                ? "Chọn nhanh các mẫu câu chữ chạy thu hút khách hàng, kích thích tăng tỷ lệ chuyển đổi và doanh số POD."
+                : "Quickly select high-converting promo copy to drive engagement and boost print-on-demand sales."}
             </p>
           </div>
 
@@ -551,19 +617,19 @@ export default function AnnouncementsPage() {
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
-              Tất Cả
+              {isVi ? "Tất Cả" : "All"}
             </button>
             {SUGGESTIONS.map((cat) => (
               <button
-                key={cat.category}
-                onClick={() => setSelectedSuggestionCat(cat.category)}
+                key={cat.id}
+                onClick={() => setSelectedSuggestionCat(cat.id)}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition ${
-                  selectedSuggestionCat === cat.category
+                  selectedSuggestionCat === cat.id
                     ? "bg-[#ff7700] text-black"
                     : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                {cat.category.split(" ")[0]} {cat.category.split(" ")[1]}
+                {isVi ? cat.categoryVi : cat.categoryEn}
               </button>
             ))}
           </div>
@@ -571,13 +637,13 @@ export default function AnnouncementsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {SUGGESTIONS.filter(
-            (cat) => selectedSuggestionCat === "all" || selectedSuggestionCat === cat.category
+            (cat) => selectedSuggestionCat === "all" || selectedSuggestionCat === cat.id
           ).map((cat) => {
             const Icon = cat.icon;
             return (
-              <div key={cat.category} className="space-y-2.5">
+              <div key={cat.id} className="space-y-2.5">
                 <h3 className="text-xs font-extrabold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Icon size={15} className="text-[#ff7700]" /> {cat.category}
+                  <Icon size={15} className="text-[#ff7700]" /> {isVi ? cat.categoryVi : cat.categoryEn}
                 </h3>
 
                 <div className="space-y-2">
@@ -597,17 +663,17 @@ export default function AnnouncementsPage() {
                         <button
                           onClick={() => handleUseSuggestion(sug)}
                           className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-blue-600 hover:border-blue-300 text-[11px] font-bold shadow-sm transition"
-                          title="Tùy chỉnh trước khi lưu"
+                          title={isVi ? "Tùy chỉnh trước khi lưu" : "Customize before adding"}
                         >
-                          ✨ Sửa & Thêm
+                          {isVi ? "✨ Sửa & Thêm" : "✨ Customize"}
                         </button>
 
                         <button
                           onClick={() => handleQuickAddSuggestion(sug)}
                           className="px-2.5 py-1 rounded-lg bg-[#ff7700] hover:bg-[#e06800] text-black text-[11px] font-extrabold shadow-sm transition flex items-center gap-1"
-                          title="Thêm ngay vào danh sách chạy"
+                          title={isVi ? "Thêm ngay vào danh sách chạy" : "Add immediately to live marquee"}
                         >
-                          <Plus size={13} /> Thêm Ngay
+                          <Plus size={13} /> {isVi ? "Thêm Ngay" : "Quick Add"}
                         </button>
                       </div>
                     </div>
@@ -625,10 +691,14 @@ export default function AnnouncementsPage() {
           <div>
             <h2 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider flex items-center gap-2">
               <Layers className="w-5 h-5 text-blue-600" />
-              3. Danh Sách Các Dòng Chữ Chạy ({config.items.length})
+              {isVi
+                ? `3. Danh Sách Các Dòng Chữ Chạy (${config.items.length})`
+                : `3. Announcement Items List (${config.items.length})`}
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              (Thứ tự từ trên xuống dưới sẽ chạy lần lượt trên thanh Marquee ngoài website).
+              {isVi
+                ? "(Thứ tự từ trên xuống dưới sẽ chạy lần lượt trên thanh Marquee ngoài website)."
+                : "(Items will rotate sequentially from top to bottom on the storefront marquee)."}
             </p>
           </div>
 
@@ -636,20 +706,24 @@ export default function AnnouncementsPage() {
             onClick={openCreateModal}
             className="px-4 py-2 bg-[#ff7700] hover:bg-[#e06800] text-black rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm transition"
           >
-            <Plus size={14} /> Thêm Dòng Chữ
+            <Plus size={14} /> {isVi ? "Thêm Dòng Chữ" : "Add Item"}
           </button>
         </div>
 
         {loading ? (
           <div className="p-8 text-center text-xs text-slate-400 animate-pulse">
-            Đang tải danh sách chữ chạy...
+            {isVi ? "Đang tải danh sách chữ chạy..." : "Loading announcements list..."}
           </div>
         ) : config.items.length === 0 ? (
           <div className="p-12 text-center space-y-3">
             <Megaphone className="w-12 h-12 text-slate-300 mx-auto" />
-            <p className="text-sm font-bold text-slate-700">Chưa có dòng chữ chạy nào</p>
+            <p className="text-sm font-bold text-slate-700">
+              {isVi ? "Chưa có dòng chữ chạy nào" : "No announcement items found"}
+            </p>
             <p className="text-xs text-slate-500">
-              Hãy chọn nhanh các mẫu gợi ý ở mục số 2 hoặc nhấn "Thêm Dòng Chữ Mới".
+              {isVi
+                ? 'Hãy chọn nhanh các mẫu gợi ý ở mục số 2 hoặc nhấn "Thêm Dòng Chữ Mới".'
+                : 'Select from suggested templates above or click "Add New Announcement".'}
             </p>
           </div>
         ) : (
@@ -669,7 +743,7 @@ export default function AnnouncementsPage() {
                       onClick={() => handleMoveOrder(index, "up")}
                       disabled={index === 0}
                       className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-20 cursor-pointer"
-                      title="Chuyển lên trước"
+                      title={isVi ? "Chuyển lên trước" : "Move up"}
                     >
                       <ChevronUp size={14} />
                     </button>
@@ -677,7 +751,7 @@ export default function AnnouncementsPage() {
                       onClick={() => handleMoveOrder(index, "down")}
                       disabled={index === config.items.length - 1}
                       className="p-1 rounded hover:bg-slate-200 text-slate-500 disabled:opacity-20 cursor-pointer"
-                      title="Chuyển xuống sau"
+                      title={isVi ? "Chuyển xuống sau" : "Move down"}
                     >
                       <ChevronDown size={14} />
                     </button>
@@ -696,7 +770,7 @@ export default function AnnouncementsPage() {
                         </span>
                       ) : (
                         <span className="text-[10px] text-slate-400 font-medium">
-                          (Không gán liên kết)
+                          {isVi ? "(Không gán liên kết)" : "(No link attached)"}
                         </span>
                       )}
 
@@ -707,7 +781,13 @@ export default function AnnouncementsPage() {
                             : "bg-slate-200 text-slate-600"
                         }`}
                       >
-                        {item.isActive ? "● Đang Kích Hoạt" : "○ Tạm Ẩn"}
+                        {item.isActive
+                          ? isVi
+                            ? "● Đang Kích Hoạt"
+                            : "● Active"
+                          : isVi
+                          ? "○ Tạm Ẩn"
+                          : "○ Inactive"}
                       </span>
                     </div>
                   </div>
@@ -722,13 +802,19 @@ export default function AnnouncementsPage() {
                         : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                     }`}
                   >
-                    {item.isActive ? "Tạm Ẩn" : "Kích Hoạt"}
+                    {item.isActive
+                      ? isVi
+                        ? "Tạm Ẩn"
+                        : "Deactivate"
+                      : isVi
+                      ? "Kích Hoạt"
+                      : "Activate"}
                   </button>
 
                   <button
                     onClick={() => openEditModal(item)}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-blue-50 hover:text-blue-600 text-slate-600 transition"
-                    title="Chỉnh sửa"
+                    title={isVi ? "Chỉnh sửa" : "Edit"}
                   >
                     <Edit3 size={15} />
                   </button>
@@ -736,7 +822,7 @@ export default function AnnouncementsPage() {
                   <button
                     onClick={() => handleDeleteItem(item)}
                     className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-600 transition"
-                    title="Xóa"
+                    title={isVi ? "Xóa" : "Delete"}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -754,10 +840,18 @@ export default function AnnouncementsPage() {
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
               <div>
                 <h3 className="text-lg font-black text-slate-900">
-                  {editingItem ? "Chỉnh Sửa Dòng Chữ Chạy" : "Thêm Dòng Chữ Chạy Mới"}
+                  {editingItem
+                    ? isVi
+                      ? "Chỉnh Sửa Dòng Chữ Chạy"
+                      : "Edit Announcement Item"
+                    : isVi
+                    ? "Thêm Dòng Chữ Chạy Mới"
+                    : "Add New Announcement Item"}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Nhập nội dung thông báo và link điều hướng khi khách hàng bấm vào.
+                  {isVi
+                    ? "Nhập nội dung thông báo và link điều hướng khi khách hàng bấm vào."
+                    : "Enter promotional headline and click-through destination link."}
                 </p>
               </div>
               <button
@@ -771,7 +865,7 @@ export default function AnnouncementsPage() {
             <form onSubmit={handleSaveItem} className="space-y-4 text-xs">
               <div className="space-y-1">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Chèn Nhanh Biểu Tượng Icon / Emoji:
+                  {isVi ? "Chèn Nhanh Biểu Tượng Icon / Emoji:" : "Quick Emoji / Icon Shortcuts:"}
                 </span>
                 <div className="flex flex-wrap gap-1.5 p-2 bg-slate-50 rounded-xl border border-slate-200">
                   {EMOJI_SHORTCUTS.map((emoji) => (
@@ -789,7 +883,7 @@ export default function AnnouncementsPage() {
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                  Nội Dung Chữ Chạy *
+                  {isVi ? "Nội Dung Chữ Chạy *" : "Announcement Text *"}
                 </label>
                 <textarea
                   required
@@ -803,23 +897,23 @@ export default function AnnouncementsPage() {
 
               <div className="space-y-1">
                 <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                  Đường Link Điều Hướng (Target URL khi bấm)
+                  {isVi ? "Đường Link Điều Hướng (Target URL khi bấm)" : "Destination URL (Optional click target)"}
                 </label>
                 <input
                   type="text"
                   value={formData.linkUrl}
                   onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                  placeholder="e.g. /shop hoặc /collections/halloween hoặc /pages/order-tracking"
+                  placeholder="e.g. /shop or /collections/halloween or /pages/order-tracking"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono outline-none focus:border-[#ff7700] focus:bg-white"
                 />
 
                 <div className="flex flex-wrap gap-1.5 pt-1.5">
                   {[
-                    { label: "Tất cả SP", url: "/shop" },
+                    { label: isVi ? "Tất cả SP" : "All Products", url: "/shop" },
                     { label: "Halloween", url: "/collections/halloween" },
                     { label: "Trending", url: "/collections/trending" },
                     { label: "Vintage", url: "/collections/vintage" },
-                    { label: "Tra cứu đơn", url: "/pages/order-tracking" },
+                    { label: isVi ? "Tra cứu đơn" : "Track Order", url: "/pages/order-tracking" },
                   ].map((chip) => (
                     <button
                       key={chip.url}
@@ -836,7 +930,7 @@ export default function AnnouncementsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700 uppercase tracking-wider block">
-                    Thứ Tự Hiển Thị
+                    {isVi ? "Thứ Tự Hiển Thị" : "Display Order"}
                   </label>
                   <input
                     type="number"
@@ -849,8 +943,12 @@ export default function AnnouncementsPage() {
 
                 <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl mt-4">
                   <div>
-                    <span className="font-bold text-slate-800 block">Kích Hoạt Ngay</span>
-                    <span className="text-[11px] text-slate-500">Hiển thị trên Marquee</span>
+                    <span className="font-bold text-slate-800 block">
+                      {isVi ? "Kích Hoạt Ngay" : "Active Immediately"}
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      {isVi ? "Hiển thị trên Marquee" : "Display on storefront marquee"}
+                    </span>
                   </div>
                   <input
                     type="checkbox"
@@ -867,14 +965,24 @@ export default function AnnouncementsPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-5 py-2.5 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                 >
-                  Hủy Bỏ
+                  {isVi ? "Hủy Bỏ" : "Cancel"}
                 </button>
                 <button
                   type="submit"
                   disabled={savingItem}
                   className="px-6 py-2.5 rounded-xl bg-[#ff7700] hover:bg-[#e06800] text-black font-extrabold shadow-md shadow-orange-500/20 transition cursor-pointer disabled:opacity-50"
                 >
-                  {savingItem ? "Đang lưu..." : editingItem ? "Cập Nhật Dòng Chữ" : "Thêm Dòng Chữ Mới"}
+                  {savingItem
+                    ? isVi
+                      ? "Đang lưu..."
+                      : "Saving..."
+                    : editingItem
+                    ? isVi
+                      ? "Cập Nhật Dòng Chữ"
+                      : "Update Announcement"
+                    : isVi
+                    ? "Thêm Dòng Chữ Mới"
+                    : "Create Announcement"}
                 </button>
               </div>
             </form>
@@ -884,4 +992,3 @@ export default function AnnouncementsPage() {
     </div>
   );
 }
-

@@ -114,3 +114,30 @@ export function useDeleteProduct() {
     },
   });
 }
+
+export function useDuplicateProduct() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      frontImage,
+      backImage,
+      replaceVariantImages,
+    }: {
+      id: string;
+      frontImage: string;
+      backImage?: string | null;
+      replaceVariantImages?: boolean;
+    }) => {
+      const res = await apiClient.post(`/admin/products/${id}/duplicate`, {
+        frontImage,
+        backImage,
+        replaceVariantImages,
+      });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
+    },
+  });
+}

@@ -34,18 +34,34 @@ export function slugify(text: string): string {
     .replace(/\-\-+/g, "-");
 }
 
-export function getOrderStatusBadge(status: OrderStatus) {
+export function getOrderStatusBadge(status: OrderStatus, lang: "en" | "vi" = "en") {
+  const isVi = lang === "vi";
   switch (status) {
     case "PLACED":
-      return { label: "Đã đặt (Placed)", bg: "bg-blue-500/10 text-blue-400 border-blue-500/30" };
+      return {
+        label: isVi ? "Đã đặt (Placed)" : "Placed",
+        bg: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+      };
     case "PRINTING":
-      return { label: "Đang in POD (Printing)", bg: "bg-amber-500/10 text-amber-400 border-amber-500/30" };
+      return {
+        label: isVi ? "Đang in POD (Printing)" : "POD Printing",
+        bg: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+      };
     case "SHIPPED":
-      return { label: "Đã gửi hàng (Shipped)", bg: "bg-purple-500/10 text-purple-400 border-purple-500/30" };
+      return {
+        label: isVi ? "Đã gửi hàng (Shipped)" : "Shipped",
+        bg: "bg-purple-500/10 text-purple-400 border-purple-500/30",
+      };
     case "DELIVERED":
-      return { label: "Đã giao (Delivered)", bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" };
+      return {
+        label: isVi ? "Đã giao (Delivered)" : "Delivered",
+        bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+      };
     case "CANCELLED":
-      return { label: "Đã hủy (Cancelled)", bg: "bg-rose-500/10 text-rose-400 border-rose-500/30" };
+      return {
+        label: isVi ? "Đã hủy (Cancelled)" : "Cancelled",
+        bg: "bg-rose-500/10 text-rose-400 border-rose-500/30",
+      };
     default:
       return { label: status, bg: "bg-gray-500/10 text-gray-400 border-gray-500/30" };
   }
